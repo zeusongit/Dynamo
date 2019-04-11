@@ -17,4 +17,4 @@ docker pull artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools20
 docker run -m 4GB -d -t -v c:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822:c:\Dynamo --name localBuildContainer artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81
 
 # Build LibG
-# docker exec localBuildContainer msbuild c:\Dynamo\src\Dynamo.All.sln /property:Configuration=Release
+docker exec localBuildContainer msbuild c:\Dynamo\src\Dynamo.All.sln /property:Configuration=Release
