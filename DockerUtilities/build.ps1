@@ -14,10 +14,7 @@ docker rm localBuildContainer
 docker pull artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81
 
 # Copy latest pulled LibG to the container
-# docker run -m 4GB -d -t -v c:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822:c:\Dynamo --name localBuildContainer artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81
-
-# Move to a different location inside the container
-# docker exec localBuildContainer xcopy c:\LibG c:\LibGCopy /s /i /y
+docker run -m 4GB -d -t -v c:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822:c:\Dynamo --name localBuildContainer artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81
 
 # Build LibG
-# docker exec localBuildContainer msbuild c:\libGCopy\build.xml
+# docker exec localBuildContainer msbuild c:\Dynamo\src\Dynamo.All.sln /property:Configuration=Release

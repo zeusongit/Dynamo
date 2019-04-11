@@ -6,11 +6,11 @@ build:
   scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\build.ps1"
 
-ci_test:
-  scripts:
+# ci_test:
+#  scripts:
     #- "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\test.ps1"
-  after_scripts:
-    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\stopAndRemoveContainer.ps1"
+#  after_scripts:
+#    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\stopAndRemoveContainer.ps1"
   #test_report_files:
     -
   #    file_name: "NUnitTestResults.xml"
