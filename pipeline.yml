@@ -1,0 +1,18 @@
+version: 0.1.1
+check_changelog_updated_on_pr: false
+pipeline_os: "Windows"
+
+build:
+  scripts:
+    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\build.ps1"
+
+ci_test:
+  scripts:
+    #- "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\test.ps1"
+  after_scripts:
+    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\stopAndRemoveContainer.ps1"
+  #test_report_files:
+    -
+  #    file_name: "NUnitTestResults.xml"
+  #    format: nunit
+  #use_default_test_case_setup: false
