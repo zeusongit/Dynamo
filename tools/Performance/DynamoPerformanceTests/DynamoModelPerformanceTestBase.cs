@@ -55,7 +55,7 @@ namespace DynamoPerformanceTests
 
             var di = new DirectoryInfo(regTestPath);
             var dyns = di.GetFiles("*.dyn");
-            foreach (var fileInfo in new List<FileInfo>() { dyns[0] })
+            foreach (var fileInfo in dyns})
             {
                 Console.WriteLine("Running performance benchmarks using graphs at " + fileInfo.FullName);
                 yield return fileInfo.FullName;
