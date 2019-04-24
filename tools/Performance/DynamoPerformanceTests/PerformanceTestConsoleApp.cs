@@ -71,8 +71,8 @@ namespace DynamoPerformanceTests
                     goto case Command.Benchmark;
 
                 case Command.Benchmark:
-                    DynamoViewPerformanceTestBase.testDirectory = testDirectory;
-                    var runSummaryWithUI = BenchmarkRunner.Run<DynamoViewPerformanceTestBase>(config);
+               //     DynamoViewPerformanceTestBase.testDirectory = testDirectory;
+                 //   var runSummaryWithUI = BenchmarkRunner.Run<DynamoViewPerformanceTestBase>(config);
 
                     DynamoModelPerformanceTestBase.testDirectory = testDirectory;
                     var runSummaryWithoutUI = BenchmarkRunner.Run<DynamoModelPerformanceTestBase>(config);
