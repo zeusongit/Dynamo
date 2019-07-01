@@ -5,14 +5,14 @@ pipeline_os: "Windows"
 build:
   before_scripts:
     - "docker pull artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81"
-    - "docker run -m 4GB -d -t --mount type=bind,source=C:\Jenkins\workspace\Dynamo\Dynamo,target=c:\WorkspaceDynamo --name slow-test dynamoparallel"
+    - "docker run -m 4GB -d -t --mount type=bind,source=C:\\Jenkins\\workspace\\Dynamo\\Dynamo,target=c:\\WorkspaceDynamo --name slow-test dynamoparallel"
   scripts:
-    - "docker exec slow-test msbuild c:\WorkspaceDynamo\DYN-1822\src\build.xml"
+    - "docker exec slow-test msbuild c:\\WorkspaceDynamo\\DYN-1822\\src\\build.xml"
   after_scripts:
     - "docker rm -f slow-test"
 ci_test:
   before_scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\TestSetup.ps1"
   scripts:
-    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\ParallelTestLocal.ps1 -path C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822\src\Tools\TransformXMLToCSVTool\Result\textFileWithFiltersFastTests.txt"
+    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\ParallelTest.ps1 -path C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersFastTests.txt"
   test_report_dir: TestResults
