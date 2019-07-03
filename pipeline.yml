@@ -12,5 +12,5 @@ ci_test:
   before_scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\TestSetup.ps1"
   scripts:
-    - "%SystemRoot%\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\ParallelTest.ps1 -path C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersFastTests.txt"
+    - "%SystemRoot%\\SysWOW64\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\ParallelTest.ps1 -path C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersFastTests.txt"
   test_report_dir: TestResults
