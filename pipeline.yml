@@ -4,12 +4,12 @@ pipeline_os: "Windows"
 
 build:
   before_scripts:
-    - "docker pull artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81"
-    - "docker run -m 4GB -d -t --mount type=bind,source=C:\\Jenkins\\workspace\\Dynamo\\Dynamo,target=c:\\WorkspaceDynamo --name slow-test dynamoparallel"
+    - "powershell.exe docker pull artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81"
+    - "powershell.exe docker run -m 4GB -d -t --mount type=bind,source=C:\\Jenkins\\workspace\\Dynamo\\Dynamo,target=c:\\WorkspaceDynamo --name slow-test dynamo"
   scripts:
-    - "docker exec slow-test msbuild c:\\WorkspaceDynamo\\DYN-1822\\src\\build.xml"
+    - "powershell.exe docker exec slow-test msbuild c:\\WorkspaceDynamo\\DYN-1822\\src\\build.xml"
   after_scripts:
-    - "docker rm -f slow-test"
+    - "powershell.exe docker rm -f slow-test"
 ci_test:
   before_scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\TestSetup.ps1"
