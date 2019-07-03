@@ -6,6 +6,8 @@ $Tests = Import-Csv $path -Header 'TestClass', 'TestNamespace', 'TestAssembly'
 $NUnitDir = "C:\Program Files (x86)\NUnit.org\nunit-console\"
 Set-Location -Path $NUnitDir
 
+New-Item -Path "C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822" -Name "TestResults" -ItemType "directory"
+
 $Is64 = [System.Environment]::Is64BitProcess
 $Is64
 
