@@ -12,8 +12,22 @@ $pathFast = "C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\Trans
 $pathSlow = "C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersSlowTests.txt"
 
     parallel {
-        {&$ScriptToRun -path $pathFast}
-        {&$ScriptToRun -path $pathFast}
+
+
+        #{&$ScriptToRun -path $pathFast}
+        #{&$ScriptToRun -path $pathFast}
+
+        #{&".\ParallelTest.ps1 -path " + $pathFast}
+        #{&".\ParallelTest.ps1 -path " + $pathFast}
+
+
+        #InlineScript { '$ScriptToRun -path $pathFast' }
+        #InlineScript { '$ScriptToRun -path $pathFast' }
+
+
+        Start-Process -FilePath Powershell.exe -ArgumentList $ScriptToRun + " -path " + $pathFast
+        Start-Process -FilePath Powershell.exe -ArgumentList $ScriptToRun + " -path " + $pathFast
+        
     }
 
 }
