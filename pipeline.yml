@@ -18,3 +18,10 @@ ci_test:
   scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\ExecuteParallelTest.ps1"
   test_report_dir: TestResults
+  test_report_files:
+    -
+      file_name: "TestResult-AnnotationViewModelTests.xml"
+      format: nunit
+    -
+      file_name: "TestResult-CodeCompletionTests.xml"
+      format: nunit
