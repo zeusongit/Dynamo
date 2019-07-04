@@ -26,8 +26,6 @@ $pathSlow = "C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\Trans
 
 
         Start-Process -FilePath Powershell.exe -ArgumentList $ScriptToRun + " -path " + $pathFast
-        Start-Process -FilePath Powershell.exe -ArgumentList $ScriptToRun + " -path " + $pathFast
-        
     }
 
 }
