@@ -24,6 +24,9 @@ ci_test:
       format: nunit
     -
       file_name: "TestResult-CodeCompletionTests.xml"
+      format: nunit  
+    -
+      file_name: "TestResult-AnalysisTests.xml"
       format: nunit
       
 notifications:
