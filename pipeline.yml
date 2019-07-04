@@ -25,3 +25,6 @@ ci_test:
     -
       file_name: "TestResult-CodeCompletionTests.xml"
       format: nunit
+      
+notifications:
+  slack: dynamo-team:XCFz6s0hJl3QOYyRRlXdGhRg
