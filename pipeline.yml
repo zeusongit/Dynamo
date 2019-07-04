@@ -5,8 +5,12 @@ check_changelog_updated_on_pr: false
 pipeline_os: "Windows"
 
 build:
-  scripts:
-    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\BuildScripts.ps1"
+    pre_build_script:
+        - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\PreBuildScript.ps1"
+    build_script:
+        - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\BuildScript.ps1"
+    post_build_script:
+        - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\PostBuildScript.ps1"
     
 ci_test:
   before_scripts:
