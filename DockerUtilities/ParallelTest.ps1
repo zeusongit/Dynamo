@@ -8,9 +8,6 @@ Set-Location -Path $NUnitDir
 
 New-Item -Path "C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822" -Name "TestResults" -ItemType "directory"
 
-$Is64 = [System.Environment]::Is64BitProcess
-$Is64
-
 workflow RunTests_Parallel {
     param($Tests)
 
@@ -26,8 +23,6 @@ workflow RunTests_Parallel {
     foreach -parallel ($Test in $Tests){
         $AssemblyLocation = $ProjectDir + '\' + $Test.TestAssembly
 
-        #--trace==Verbose --dispose-runners
-        #$ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible" --labels=Before --result="' + $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
         $ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible" --labels=Before --result="' + $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
 
         #Start an NUnit console instance for the current test
