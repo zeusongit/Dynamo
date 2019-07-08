@@ -1,8 +1,9 @@
 version: 0.1.1
 env:
   - BUILD_MACHINE: "Dynamo_Win_003"
-  - SLACK_QUANTUM_BUILD_CHANNEL : "#dynamo-jenkinsbuild"
-  - SLACK_QUANTUM_BUILD_TOKEN : "slack-notify-token"
+  - SLACK_QUANTUM_BUILD_CHANNEL : "#quantum-build"
+  - SLACK_QUANTUM_BUILD_TOKEN : "J5mMX9m33xrxZoy1NiBJ27qb"
+  
 check_changelog_updated_on_pr: false
 pipeline_os: "Windows"
 force_slack_notification : true
