@@ -1,8 +1,10 @@
 version: 0.1.1
 env:
   - BUILD_MACHINE: "Dynamo_Win_003"
-  - SLACK_QUANTUM_BUILD_CHANNEL : "#quantum-build"
-  - SLACK_QUANTUM_BUILD_TOKEN : "J5mMX9m33xrxZoy1NiBJ27qb"
+  - SLACK_QUANTUM_BUILD_CHANNEL : "#dynamo-jenkinsbuild"
+  - SLACK_QUANTUM_BUILD_CREDENTIAL_ID : "slack-notify-token"
+  - MAIL_QUANTUM_BUILD_RECIPIENT : "dynamo.plaid.dev@autodesk.com"
+  - TEST_REPORT_FORMAT : "nunit"
   
 check_changelog_updated_on_pr: false
 pipeline_os: "Windows"
@@ -22,13 +24,4 @@ ci_test:
   scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\ExecuteParallelTest.ps1"
   test_report_dir: TestResults
-  test_report_files:
-    -
-      file_name: "TestResult-AnnotationViewModelTests.xml"
-      format: nunit
-    -
-      file_name: "TestResult-CodeCompletionTests.xml"
-      format: nunit  
-    -
-      file_name: "TestResult-AnalysisTests.xml"
-      format: nunit
+
