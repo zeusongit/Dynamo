@@ -20,6 +20,8 @@ workflow RunTests_Parallel {
     # Location of the NUnit Console
     $NunitTool = "nunit3-console.exe"
 
+    $Xpath = "//testsuites"
+
     foreach -parallel ($Test in $Tests){
         $AssemblyLocation = $ProjectDir + '\' + $Test.TestAssembly
 
@@ -27,6 +29,15 @@ workflow RunTests_Parallel {
 
         #Start an NUnit console instance for the current test
         Start-Process -FilePath $NunitTool -ArgumentList $ParallelExecutionArguments -Wait
+
+        $Path = $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml'
+        [xml]$Types = Get-Content $Path
+        $node = Select-Xml -Xml $Types -XPath $Xpath
+
+        If ($node.Node.ChildNodes.Count -eq '0' -And (Test-Path $Path)) {
+            Remove-Item $Path -ErrorAction Ignore
+        }
+
     }
 }
 
