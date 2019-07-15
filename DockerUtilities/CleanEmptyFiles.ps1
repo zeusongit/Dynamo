@@ -14,6 +14,6 @@ Foreach-Object {
     [xml]$Types = Get-Content $Path
     $node = Select-Xml -Xml $Types -XPath $Xpath
     If ($node.Node.ChildNodes.Count -eq '0' -And (Test-Path $Path)) {
-        Remove-Item $Path -ErrorAction Ignore
+        Remove-Item -LiteralPath $Path -ErrorAction Ignore
     }
 }
