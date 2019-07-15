@@ -26,4 +26,4 @@ ci_test:
   after_scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\CleanEmptyFiles.ps1"
   
-test_report_dir: TestResults
+  test_report_dir: TestResults
