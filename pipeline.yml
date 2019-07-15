@@ -23,6 +23,5 @@ ci_test:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\TestSetup.ps1"
   scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\ExecuteParallelTest.ps1"
-  after_scripts:
-    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\CleanEmptyFiles.ps1"
+  
   test_report_dir: TestResults
