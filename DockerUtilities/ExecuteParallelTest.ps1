@@ -31,12 +31,13 @@ workflow RunTests_Parallel {
         Start-Process -FilePath $NunitTool -ArgumentList $ParallelExecutionArguments -Wait
 
         $Path = $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml'
-        [xml]$Types = Get-Content $Path
+        $Path
+        <#[xml]$Types = Get-Content $Path
         $node = Select-Xml -Xml $Types -XPath $Xpath
 
         If ($node.Node.ChildNodes.Count -eq '0' -And (Test-Path $Path)) {
             Remove-Item $Path -ErrorAction Ignore
-        }
+        }#>
 
     }
 }
