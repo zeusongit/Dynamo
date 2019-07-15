@@ -24,4 +24,4 @@ ci_test:
   scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\ExecuteParallelTest.ps1"
   
-  test_report_dir: TestResults
+  
