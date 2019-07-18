@@ -36,7 +36,7 @@ Set-Location -Path $PackageDirectory
 C:\Nuget\nuget.exe install -configFile $NugetConfig $ASM -version $ASMVer
 
 #ASM Copy
-Copy-Item "$PackageDirectory\$ASMBin\bin\*" -Destination "$DynamoExtern\LibG_$ASMBranch\"
+Copy-Item "$PackageDirectory\$ASMBin\bin\*" -Destination "$DynamoExtern\LibG_$ASMBranch\" -Recurse
 
 #TSP Copy
 Copy-Item "$PackageDirectory\$TSPLINESBin\bin\*.dll" -Destination "$DynamoExtern\LibG_$ASMBranch\"
