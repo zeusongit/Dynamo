@@ -2,6 +2,7 @@
    Date: 07/04/2019
    Purpose: Pre Build Script of Dynamo
 #>
+$ErrorActionPreference = "Stop"
 
 #=====================ASM Configuration=====================#
 

@@ -2,6 +2,8 @@
    Date: 06/18/2019
    Purpose: Run the .dll tests using the NUnit Console Runner
 #>
+$ErrorActionPreference = "Stop"
+
 # Dynamo's location
 $DynamoRoot = "C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822"
 
