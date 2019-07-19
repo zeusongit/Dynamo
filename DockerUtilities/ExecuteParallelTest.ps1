@@ -42,7 +42,7 @@ workflow _Wkf_StartCommands {
 
     parallel {
         RunTests_Parallel -Tests $FastTests
-        #RunTests_Parallel -Tests $SlowTests
+        RunTests_Parallel -Tests $SlowTests
     }
 
 }
