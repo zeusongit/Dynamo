@@ -2,6 +2,7 @@
    Date: 07/15/2019
    Purpose: Clean empty files
 #>
+$ErrorActionPreference = "Stop"
 
 # Dynamo's location
 $DynamoRoot = "C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822"

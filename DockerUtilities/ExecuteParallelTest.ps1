@@ -2,6 +2,7 @@
    Date: 07/04/2019
    Purpose: Parallel test
 #>
+$ErrorActionPreference = "Stop"
 
 $NUnitDir = "C:\Program Files (x86)\NUnit.org\nunit-console\"
 Set-Location -Path $NUnitDir
