@@ -29,24 +29,32 @@ $PackageDirectory = "$MSBuildProjectDirectory\asm\asm_sdk_$ASMBranch\packages"
 $MSBuildProjectDirectory = "C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822"
 $DynamoExtern = "$MSBuildProjectDirectory\extern"
 
-#Make Directory
-New-Item -Path "$MSBuildProjectDirectory\asm\asm_sdk_$ASMBranch" -Name "packages" -ItemType "directory" -Force
+try
+{
+	#Make Directory
+	New-Item -Path "$MSBuildProjectDirectory\asm\asm_sdk_$ASMBranch" -Name "packages" -ItemType "directory" -Force
 
-#Donwload ASM
-Set-Location -Path $PackageDirectory
-C:\Nuget\nuget.exe install -configFile $NugetConfig $ASM -version $ASMVer
+	#Donwload ASM
+	Set-Location -Path $PackageDirectory
+	C:\Nuget\nuget.exe install -configFile $NugetConfig $ASM -version $ASMVer
 
-#ASM Copy
-Copy-Item "$PackageDirectory\$ASMBin\bin\*" -Destination "$DynamoExtern\LibG_$ASMBranch\" -Recurse
+	#ASM Copy
+	Copy-Item "$PackageDirectory\$ASMBin\bin\*" -Destination "$DynamoExtern\LibG_$ASMBranch\" -Recurse
 
-#TSP Copy
-Copy-Item "$PackageDirectory\$TSPLINESBin\bin\*.dll" -Destination "$DynamoExtern\LibG_$ASMBranch\"
+	#TSP Copy
+	Copy-Item "$PackageDirectory\$TSPLINESBin\bin\*.dll" -Destination "$DynamoExtern\LibG_$ASMBranch\"
 
-#TBB Copy
-Copy-Item "$PackageDirectory\$TBBBin\bin\*.dll" -Destination "$DynamoExtern\LibG_$ASMBranch\"
+	#TBB Copy
+	Copy-Item "$PackageDirectory\$TBBBin\bin\*.dll" -Destination "$DynamoExtern\LibG_$ASMBranch\"
 
 
-#Docker configuration
-docker pull artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81
+	#Docker configuration
+	docker pull artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81
 
-docker run -m 8GB --cpus=4 -d -t --mount type=bind,source=C:\Jenkins\workspace\Dynamo\Dynamo,target=c:\WorkspaceDynamo --name build-test artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81
+	docker run -m 8GB --cpus=4 -d -t --mount type=bind,source=C:\Jenkins\workspace\Dynamo\Dynamo,target=c:\WorkspaceDynamo --name build-test artifactory.dev.adskengineer.net/docker-local-v2/dynamo/buildtools2017sdk81
+}
+catch
+{
+	Write-Host $error[0]
+	throw $LASTEXITCODE
+}

@@ -4,5 +4,13 @@
 #>
 $ErrorActionPreference = "Stop"
 
-docker rm -f build-test
+try
+{
+	docker rm -f build-test
+}
+catch
+{
+	Write-Host $error[0]
+	throw $LASTEXITCODE
+}
 
