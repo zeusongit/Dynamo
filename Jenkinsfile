@@ -3,8 +3,8 @@
 @Library('PSL@master')
 @Library('CILibrary@CBP/DynamoPerfTest') _
 
-StartPipeline()
-
-
-
-
+try {
+    StartPipeline()
+} catch(Exception ex) {
+    $ErrorActionPreference = "Stop" 
+}
