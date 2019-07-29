@@ -5,6 +5,7 @@ env:
   - SLACK_QUANTUM_BUILD_CREDENTIAL_ID : "slack-notify-token"
   - MAIL_QUANTUM_BUILD_RECIPIENT : "dynamo.plaid.dev@autodesk.com"
   - TEST_REPORT_FORMAT : "nunit"
+  - JOB_NAME: "DYN-1822"
   
 check_changelog_updated_on_pr: false
 pipeline_os: "Windows"
