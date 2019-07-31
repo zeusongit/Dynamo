@@ -44,9 +44,9 @@ workflow RunTests_Parallel {
 
 workflow _Wkf_StartCommands {
 
-    $SlowPath = "C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersSlowTests.txt" 
-    $FastPath = "C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersFastTests.txt"
-    $NonParallelPath = "C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersNoParallelSlowTests.txt"
+    $SlowPath = "$env:WORKSPACE\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersSlowTests.txt" 
+    $FastPath = "$env:WORKSPACE\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersFastTests.txt"
+    $NonParallelPath = "$env:WORKSPACE\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersNoParallelSlowTests.txt"
     
     # Map the .csv file into an object we can work with
     $SlowTests = Import-Csv $SlowPath -Header 'TestClass', 'TestNamespace', 'TestAssembly'
