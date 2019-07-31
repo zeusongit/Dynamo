@@ -25,7 +25,7 @@ $TBBBin = "$TBB.$TBBVer"
 
 $MSBuildProjectDirectory = "$env:WORKSPACE"
 
-$NugetConfig = "$MSBuildProjectDirectory\dynamo-nuget.config"
+$NugetConfig = "C:\Jenkins\workspace\Dynamo\DynamoPerformance-CI\master\config\nuget.config" #"$MSBuildProjectDirectory\dynamo-nuget.config"
 $PackageDirectory = "$MSBuildProjectDirectory\asm\asm_sdk_$ASMBranch\packages"
 $DynamoExtern = "$MSBuildProjectDirectory\extern"
 
