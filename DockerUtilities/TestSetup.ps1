@@ -5,7 +5,7 @@
 $ErrorActionPreference = "Stop"
 
 # Dynamo's location
-$DynamoRoot = "C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822"
+$DynamoRoot = "$env:WORKSPACE"
 
 # Location of the .dll's
 $ProjectDir = "$DynamoRoot\bin\AnyCPU\Release"

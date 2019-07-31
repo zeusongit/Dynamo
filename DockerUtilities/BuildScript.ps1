@@ -6,7 +6,9 @@ $ErrorActionPreference = "Stop"
 
 try
 {
-	docker exec build-test msbuild c:\WorkspaceDynamo\DYN-1822\src\build.xml
+	$WorkSpaceElements = "$env:WORKSPACE" -split '\\'
+	$WorkSpaceName = $WorkSpaceElements[$WorkSpaceElements.Length - 1]
+	docker exec build-test msbuild "c:\WorkspaceDynamo\$WorkSpaceName\src\build.xml"
 }
 catch
 {

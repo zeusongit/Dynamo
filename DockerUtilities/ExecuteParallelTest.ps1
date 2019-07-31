@@ -7,13 +7,13 @@ $ErrorActionPreference = "Stop"
 $NUnitDir = "C:\Program Files (x86)\NUnit.org\nunit-console\"
 Set-Location -Path $NUnitDir
 
-New-Item -Path "C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822" -Name "TestResults" -ItemType "directory"
+New-Item -Path "$env:WORKSPACE" -Name "TestResults" -ItemType "directory"
 
 workflow RunTests_Parallel {
     param($Tests, $RunInParallel)
 
     # Dynamo's location
-    $DynamoRoot = "C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822"
+    $DynamoRoot = "$env:WORKSPACE"
     
     # Location of the .dll's
     $ProjectDir = "$DynamoRoot\bin\AnyCPU\Release"
