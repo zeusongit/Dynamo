@@ -166,6 +166,23 @@ namespace Dynamo.Tests
             ViewModel.OpenCommand.Execute(openPath);
         }
 
+        protected void OpenModel(ref string relativeFilePath, bool isTest = false)
+        {
+            string tempPathForAngle = Path.Combine(Path.GetTempPath(), "Temp_jsonWithView_nonGuidIds");
+            string openPath = Path.Combine(TestDirectory, relativeFilePath);
+            string openPathTemp = tempPathForAngle + "\\" + Guid.NewGuid().ToString() + "_" + Path.GetFileName(openPath);
+
+            if (!Directory.Exists(tempPathForAngle))
+                Directory.CreateDirectory(tempPathForAngle);
+
+            File.Copy(openPath, openPathTemp, true);
+
+            relativeFilePath = openPathTemp;
+
+            ViewModel.OpenCommand.Execute(openPathTemp);
+
+        }
+
         protected void OpenSampleModel(string relativeFilePath)
         {
             string openPath = Path.Combine(SampleDirectory, relativeFilePath);

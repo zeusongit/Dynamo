@@ -479,14 +479,15 @@ namespace DynamoCoreWpfTests
             base.GetLibrariesToPreload(libraries);
         }
 
-        private void DoWorkspaceOpen(string filePath)
+        private void DoWorkspaceOpen(ref string filePath)
         {
-            if (Dynamo.Tests.SerializationTests.bannedTests.Any(t => filePath.Contains(t)))
+            string _filePath = filePath;
+            if (Dynamo.Tests.SerializationTests.bannedTests.Any(t => _filePath.Contains(t)))
             {
                 Assert.Inconclusive("Skipping test known to kill the test framework...");
             }
 
-            OpenModel(filePath);
+            OpenModel(ref filePath, true);
 
             var model = this.ViewModel.Model;
             var workspace = ViewModel.CurrentSpaceViewModel;
@@ -518,7 +519,8 @@ namespace DynamoCoreWpfTests
            Action<WorkspaceViewComparisonData, string, TimeSpan,Dictionary<Guid,string>> workspaceViewDataSaveFunction)
         {
             var openPath = filePath;
-            DoWorkspaceOpen(openPath);
+            DoWorkspaceOpen(ref openPath);
+            filePath = openPath;
 
             var ws1 = ViewModel.CurrentSpaceViewModel;
             var wcd1 = new WorkspaceViewComparisonData(ws1, ViewModel.Model.EngineController);
@@ -987,7 +989,7 @@ namespace DynamoCoreWpfTests
         public void NotesSerializeAsAnnotations()
         {
             var filePath = Path.Combine(TestDirectory, @"core\serialization\serialization.dyn");
-            DoWorkspaceOpen(filePath);
+            DoWorkspaceOpen(ref filePath);
             var workspace = ViewModel.Model.CurrentWorkspace;
 
             var numXMLNotes = workspace.Notes.Count();
