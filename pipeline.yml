@@ -13,7 +13,7 @@ force_slack_notification : true
 
 build:
   before_scripts:
-    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\EnvVariableTestScript.ps1 -Jenkisworkspace C:\Jenkins\workspace\Dynamo\Dynamo\DYN-1822@2"
+    - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\EnvVariableTestScript.ps1 -Jenkisworkspace 'C:\\Jenkins\\workspace\\Dynamo\\Dynamo\\DYN-1822@2'"
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\PreBuildScript.ps1"
   scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\BuildScript.ps1"
