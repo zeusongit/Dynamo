@@ -55,8 +55,8 @@ workflow _Wkf_StartCommands {
     
     parallel {
         RunTests_Parallel -Tests $FastTests -RunInParallel true
-        #RunTests_Parallel -Tests $SlowTests -RunInParallel true
-        #RunTests_Parallel -Tests $NonParallelTests -RunInParallel true
+        RunTests_Parallel -Tests $SlowTests -RunInParallel true
+        RunTests_Parallel -Tests $NonParallelTests -RunInParallel true
     }
 }
 
