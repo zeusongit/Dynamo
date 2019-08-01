@@ -10,7 +10,7 @@ Set-Location -Path $NUnitDir
 New-Item -Path "$env:WORKSPACE" -Name "TestResults" -ItemType "directory"
 
 workflow RunTests_Parallel {
-    param($Tests, $RunInParallel)
+    param($Tests)
 
     # Dynamo's location
     $DynamoRoot = "$env:WORKSPACE"
@@ -21,24 +21,13 @@ workflow RunTests_Parallel {
     # Location of the NUnit Console
     $NunitTool = "nunit3-console.exe"
 
-    If ($RunInParallel -eq 'true') {
-        foreach -parallel ($Test in $Tests){
-            $AssemblyLocation = $ProjectDir + '\' + $Test.TestAssembly
+    foreach -parallel ($Test in $Tests){
+        $AssemblyLocation = $ProjectDir + '\' + $Test.TestAssembly
 
-            $ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible" --labels=Before --result="' + $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
+        $ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible" --labels=Before --result="' + $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
 
-            #Start an NUnit console instance for the current test
-            Start-Process -FilePath $NunitTool -ArgumentList $ParallelExecutionArguments -Wait
-        }
-    }  Else {
-        foreach ($Test in $Tests){
-            $AssemblyLocation = $ProjectDir + '\' + $Test.TestAssembly
-
-            $ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible" --labels=Before --result="' + $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
-
-            #Start an NUnit console instance for the current test
-            Start-Process -FilePath $NunitTool -ArgumentList $ParallelExecutionArguments -Wait
-        }
+        #Start an NUnit console instance for the current test
+        Start-Process -FilePath $NunitTool -ArgumentList $ParallelExecutionArguments -Wait
     }
 }
 
@@ -46,17 +35,14 @@ workflow _Wkf_StartCommands {
 
     $SlowPath = "$env:WORKSPACE\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersSlowTests.txt" 
     $FastPath = "$env:WORKSPACE\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersFastTests.txt"
-    $NonParallelPath = "$env:WORKSPACE\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersNoParallelSlowTests.txt"
     
     # Map the .csv file into an object we can work with
     $SlowTests = Import-Csv $SlowPath -Header 'TestClass', 'TestNamespace', 'TestAssembly'
     $FastTests = Import-Csv $FastPath -Header 'TestClass', 'TestNamespace', 'TestAssembly'
-    $NonParallelTests = Import-Csv $NonParallelPath -Header 'TestClass', 'TestNamespace', 'TestAssembly'
     
     parallel {
-        RunTests_Parallel -Tests $FastTests -RunInParallel true
-        RunTests_Parallel -Tests $SlowTests -RunInParallel true
-        RunTests_Parallel -Tests $NonParallelTests -RunInParallel true
+        RunTests_Parallel -Tests $FastTests -RunInParallel
+        RunTests_Parallel -Tests $SlowTests -RunInParallel
     }
 }
 
