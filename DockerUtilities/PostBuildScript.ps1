@@ -6,7 +6,8 @@ $ErrorActionPreference = "Stop"
 
 try
 {
-	docker rm -f build-test
+	docker stop build-test
+	docker rm build-test
 }
 catch
 {
