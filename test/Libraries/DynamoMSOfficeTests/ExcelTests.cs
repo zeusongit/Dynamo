@@ -101,7 +101,7 @@ namespace Dynamo.Tests
         }
 
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanGetWorksheets()
         {
 
@@ -144,7 +144,7 @@ namespace Dynamo.Tests
             Assert.IsNotNull(watch.CachedValue);
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void ThrowExceptionOnGetWorksheetByNameWithInvalidInput()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WorksheetByName_InvalidInput.dyn");
@@ -164,7 +164,7 @@ namespace Dynamo.Tests
             Assert.IsNull(getWorksheet.CachedValue.Data);
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanReadWorksheetWithSingleColumnOfNumbers()
         {
 
@@ -197,7 +197,7 @@ namespace Dynamo.Tests
             }
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         
         public void CanReadMultiDimensionalWorksheet()
         {
@@ -233,7 +233,7 @@ namespace Dynamo.Tests
             }
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanReadWorksheetWithEmptyCellInUsedRange()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\DataFromFile_missingCell.dyn");
@@ -250,7 +250,7 @@ namespace Dynamo.Tests
             AssertPreviewValue(watch.GUID.ToString(), data);
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanReadWorksheetWithMixedNumbersAndStrings()
         {
 
@@ -272,7 +272,7 @@ namespace Dynamo.Tests
             AssertPreviewValue(watch.GUID.ToString(), data);
 
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void ReadOnlyFile()
         {
             //Read from readonly Excel file and make sure Excel node in Dynamo displays value correctly.
@@ -290,7 +290,7 @@ namespace Dynamo.Tests
             AssertPreviewValue(watch.GUID.ToString(), data);
 
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanReadAndWriteExcel()
         {
 
@@ -319,7 +319,7 @@ namespace Dynamo.Tests
 
             
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void ReadChangeFilename()
         {
 
@@ -383,7 +383,7 @@ namespace Dynamo.Tests
         }
         
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanReadExcelAsStrings()
         {
 
@@ -407,7 +407,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanReadEmptyCellsAsStrings()
         {
 
@@ -451,7 +451,7 @@ namespace Dynamo.Tests
 
         #region Writing
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanWrite1DDataOfMixedTypesToExcelWorksheet()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\NewWorkbook_AddMixed1DData.dyn");
@@ -467,7 +467,7 @@ namespace Dynamo.Tests
             AssertPreviewValue(watch.GUID.ToString(), data);
 
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void Excel_MAGN6872()
         {
             // http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-6872
@@ -522,7 +522,7 @@ namespace Dynamo.Tests
             Assert.AreEqual(new object[] { 1.00, 2.00, 3.00, 4.00, 5.00, null, null }, dataList3);
 
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void Excel_OverwriteWithnull_7213()
         {
             // Overwrite the excel sheet with null values and it must work ok.
@@ -545,7 +545,7 @@ namespace Dynamo.Tests
             
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void Excel_OverWriteEmptyList_MAGN7213()
         {
 
@@ -579,7 +579,7 @@ namespace Dynamo.Tests
             Assert.IsNull(getWorksheet.CachedValue.Data);
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanAddSingleItemToExcelWorksheet()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\NewWorkbook_AddSingleItemData.dyn");
@@ -600,7 +600,7 @@ namespace Dynamo.Tests
             Assert.AreEqual(100.0, rowList[0].Data);
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanAdd1DListToExcelWorksheet()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\NewWorkbook_Add1DListData.dyn");
@@ -628,7 +628,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanAdd2DListToExcelWorksheet()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\NewWorkbook_Add2DListData.dyn");
@@ -658,7 +658,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanWriteToExcelAndUpdateData()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WriteNodeAndUpdateData.dyn");
@@ -703,7 +703,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanWriteJaggedArrayToExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WriteJaggedArrayToExcel.dyn");
@@ -728,7 +728,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanWriteEmptyArrayToExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WriteEmptyArrayToExcel.dyn");
@@ -751,7 +751,7 @@ namespace Dynamo.Tests
             
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanWriteNestedEmptyListToExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WriteNestedEmptyListToExcel.dyn");
@@ -777,7 +777,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanWriteEmptyListToExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WriteEmptyListToExcel.dyn");
@@ -801,7 +801,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanOverWriteToExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\OverWriteExcelSheet.dyn");
@@ -829,7 +829,7 @@ namespace Dynamo.Tests
             AssertPreviewValue(writeNode.GUID.ToString(), data);
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanOverWritePartiallyToExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\OverWritePartialExcelSheet.dyn");
@@ -860,7 +860,7 @@ namespace Dynamo.Tests
             AssertPreviewValue(writeNode.GUID.ToString(), data);
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanWriteNullValuesToExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WriteNullValuesToExcel.dyn");
@@ -883,7 +883,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanWriteNullValuesToExcel1()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WriteNullValuesToExcel1.dyn");
@@ -905,7 +905,7 @@ namespace Dynamo.Tests
             
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void TestWriteFunctionObjectToExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\WriteFunctionobject.dyn");
@@ -932,7 +932,7 @@ namespace Dynamo.Tests
             // Empty list expected
             Assert.AreEqual(0, list.Count);
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void WriteToNonExistingFile()
         {
 
@@ -954,7 +954,7 @@ namespace Dynamo.Tests
             AssertPreviewValue(watch.GUID.ToString(), data);
            
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void WriteNonExistingSheet()
         {
 
@@ -1031,7 +1031,7 @@ namespace Dynamo.Tests
 
         }
         
-        [Test]
+        [Test, Category("ExcelTest")]
         public void WriteModifyFilename()
         {
 
@@ -1069,7 +1069,7 @@ namespace Dynamo.Tests
         }
        
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void WriteModifyGraph_3()
         {
             //incomplete
@@ -1109,7 +1109,7 @@ namespace Dynamo.Tests
 
         }
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void TestOverwriteToSingleSheetExcel()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\SingleSheetOverwrite.dyn");
@@ -1139,7 +1139,7 @@ namespace Dynamo.Tests
 
         #region Saving
 
-        [Test]
+        [Test, Category("ExcelTest")]
         public void CanSaveAsWorksheet()
         {
             string openPath = Path.Combine(TestDirectory, @"core\excel\NewWorkbook_SaveAs.dyn");
@@ -1185,7 +1185,7 @@ namespace Dynamo.Tests
             ViewModel.HomeSpace.Run();
             Assert.Pass("RunExpression should no longer crash (Defect_MAGN_883)");
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void WriteIntoExcelVerify()
         {
             // Write Into Excel sheet using WriteToFile
@@ -1227,7 +1227,7 @@ namespace Dynamo.Tests
             AssertPreviewValue(watch2.GUID.ToString(), data2);
 
         }
-        [Test]
+        [Test, Category("ExcelTest")]
         public void TestFormula()
         {
             string testDir = TestDirectory;
