@@ -32,7 +32,7 @@ foreach($Dll in $DllList)
 $OutputPath =  "$DynamoRoot\src\Tools\TransformXMLToCSVTool\XML\TestResults.xml"
 
 # Arguments for NUnit to run in 'explore' mode
-$NunitExploreArguments = $TestDlls + ' --where="cat != Failure and cat != BackwardIncompatible" --labels=Before --explore="' + $OutputPath + ';format=nunit2"'
+$NunitExploreArguments = $TestDlls + ' --where="cat != Failure and cat != BackwardIncompatible and cat != ExcelTest" --labels=Before --explore="' + $OutputPath + ';format=nunit2"'
 
 #Run NUnit in explore mode for the configured .dll's and export the results to the file specified in $OutputPath
 Start-Process -FilePath $NunitTool -ArgumentList $NunitExploreArguments -Wait
