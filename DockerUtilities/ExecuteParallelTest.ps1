@@ -52,7 +52,7 @@ workflow _Wkf_StartCommands {
     foreach ($Test in $TempTests){
         $AssemblyLocation = "$env:WORKSPACE\\bin\\AnyCPU\\Release\\" +  $Test.TestAssembly
 
-        $ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible and cat != ExcelTest" --labels=Before --result="' + $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
+        $ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible and cat != ExcelTest" --labels=Before --result="' + "$env:WORKSPACE" + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
 
         #Start an NUnit console instance for the current test
         Start-Process -FilePath "nunit3-console.exe" -ArgumentList $ParallelExecutionArguments -Wait
