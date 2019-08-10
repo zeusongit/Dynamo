@@ -45,7 +45,7 @@ workflow _Wkf_StartCommands {
     $TempTests = Import-Csv $TempPath -Header 'TestClass', 'TestNamespace', 'TestAssembly'
     
     parallel {
-        RunTests_Parallel -Tests $FastTests
+        #RunTests_Parallel -Tests $FastTests
         #RunTests_Parallel -Tests $SlowTests
     }
 
