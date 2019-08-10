@@ -55,7 +55,7 @@ workflow _Wkf_StartCommands {
         $ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible and cat != ExcelTest" --labels=Before --result="' + $DynamoRoot + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
 
         #Start an NUnit console instance for the current test
-        Start-Process -FilePath $NunitTool -ArgumentList $ParallelExecutionArguments -Wait
+        Start-Process -FilePath "nunit3-console.exe" -ArgumentList $ParallelExecutionArguments -Wait
     }
 }
 
