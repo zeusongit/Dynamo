@@ -36,27 +36,14 @@ workflow _Wkf_StartCommands {
     $SlowPath = "$env:WORKSPACE\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersSlowTests.txt" 
     $FastPath = "$env:WORKSPACE\\src\\Tools\\TransformXMLToCSVTool\\Result\\textFileWithFiltersFastTests.txt"
 
-    #$TempPath = "C:\\Temp\\Tests.csv"
-    
     # Map the .csv file into an object we can work with
     $SlowTests = Import-Csv $SlowPath -Header 'TestClass', 'TestNamespace', 'TestAssembly'
     $FastTests = Import-Csv $FastPath -Header 'TestClass', 'TestNamespace', 'TestAssembly'
 
-    #$TempTests = Import-Csv $TempPath -Header 'TestClass', 'TestNamespace', 'TestAssembly'
-    
     parallel {
         RunTests_Parallel -Tests $FastTests
         RunTests_Parallel -Tests $SlowTests
-    }
-
-    #foreach ($Test in $TempTests){
-     #   $AssemblyLocation = "$env:WORKSPACE\\bin\\AnyCPU\\Release\\" +  $Test.TestAssembly
-
-      #  $ParallelExecutionArguments = $AssemblyLocation + ' --where="test=="' + $Test.TestNamespace + '" and cat != Failure and cat != BackwardIncompatible and cat != ExcelTest" --labels=Before --result="' + "$env:WORKSPACE" + '\TestResults\TestResult-' + $Test.TestClass + '.xml";format=nunit2'
-
-        #Start an NUnit console instance for the current test
-       # Start-Process -FilePath "nunit3-console.exe" -ArgumentList $ParallelExecutionArguments -Wait
-    #}
+    }    
 }
 
 $StopWatch = [System.Diagnostics.Stopwatch]::StartNew()
