@@ -132,6 +132,31 @@ namespace Dynamo
             }
         }
 
+        protected void OpenModel(ref string relativeFilePath, bool isTest = false)
+        {
+            string openPath = string.Empty;
+
+            if (isTest)
+            {
+                string tempPathForAngle = Path.Combine(Path.GetTempPath(), "Temp_jsonWithView_nonGuidIds");
+                openPath = Path.Combine(TestDirectory, relativeFilePath);
+                string openPathTemp = tempPathForAngle + "\\" + Guid.NewGuid().ToString() + "_" + Path.GetFileName(openPath);
+
+                if (!Directory.Exists(tempPathForAngle))
+                    Directory.CreateDirectory(tempPathForAngle);
+
+                File.Copy(openPath, openPathTemp, true);
+
+                openPath = openPathTemp;
+            }
+            else
+            {
+                openPath = Path.Combine(TestDirectory, relativeFilePath);
+            }
+            
+            CurrentDynamoModel.ExecuteCommand(new DynamoModel.OpenFileCommand(openPath));
+        }
+
         protected void OpenModel(string relativeFilePath)
         {
             string openPath = Path.Combine(TestDirectory, relativeFilePath);
