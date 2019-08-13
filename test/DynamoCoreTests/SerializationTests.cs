@@ -750,7 +750,7 @@ namespace Dynamo.Tests
                 Assert.Inconclusive("Skipping test known to kill the test framework...");
             }
 
-            OpenModel(ref openPath, true);
+            OpenModel(openPath);
 
             var model = CurrentDynamoModel;
             var ws1 = model.CurrentWorkspace;

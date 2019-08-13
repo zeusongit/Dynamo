@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Xml;
 using CoreNodeModels;
 using CoreNodeModels.Input;
@@ -970,11 +969,8 @@ namespace DynamoCoreWpfTests
             Assert.IsTrue(nodeingraph.State == ElementState.Active);
             //remove custom node from definitions folder
             var savePath = Path.Combine(this.ViewModel.Model.PathManager.DefinitionDirectories.FirstOrDefault(), "NewCustomNodeSaveAndLoad.dyf");
-
+            File.Delete(savePath);
             FileInfo file = new FileInfo(savePath);
-            while (IsFileLocked(file))
-                Thread.Sleep(1000);
-            file.Delete();
         }
 
         [Test]
