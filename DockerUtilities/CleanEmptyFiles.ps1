@@ -5,7 +5,7 @@
 $ErrorActionPreference = "Stop"
 
 # Dynamo's location
-$DynamoRoot = "$env:WORKSPACE" 
+$DynamoRoot = "$env:WORKSPACE"
 
 $Xpath = "//test-case"
 
