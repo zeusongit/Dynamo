@@ -13,9 +13,15 @@ Get-ChildItem "$DynamoRoot\TestResults" -Filter *.xml |
 Foreach-Object {
     $Path = $_.FullName
     [xml]$Types = Get-Content $Path
-    $node = Select-Xml -Xml $Types -XPath $Xpath
-    If (!$node.Node) {
-        Remove-Item -LiteralPath $Path -ErrorAction Ignore
-		Write-Host "File to remove" $Path
+
+    if ($Types) {
+        $node = Select-Xml -Xml $Types -XPath $Xpath
+        If (!$node.Node) {
+            Remove-Item -LiteralPath $Path -ErrorAction Ignore
+            Write-Host "File to remove $Path"
+        }
+    } else {
+        Write-Host "Empty file found $Path"
+        throw $LASTEXITCODE
     }
 }
