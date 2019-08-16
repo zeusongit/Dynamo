@@ -11,6 +11,7 @@ $ASM = "asm-a-lib_win_release_intel64_v140"
 $ASMVer = "225.0.0"
 $ASMBinPackageName = "asm-a_win_release_intel64_v140"
 $ASMBin = "$ASMBinPackagename.$ASMVer"
+$ASMSource = "autodesk3p"
 
 #=====================TSP=====================#
 $TSPLINESVer = "7.1.1"
@@ -36,7 +37,7 @@ try
 
 	#Donwload ASM
 	Set-Location -Path $PackageDirectory
-	C:\Nuget\nuget.exe install -configFile $NugetConfig $ASM -version $ASMVer
+	C:\Nuget\nuget.exe install -configFile $NugetConfig $ASM -version $ASMVer -source $ASMSource -NoCache
 
 	#ASM Copy
 	Copy-Item "$PackageDirectory\$ASMBin\bin\*" -Destination "$DynamoExtern\LibG_$ASMBranch\" -Recurse
