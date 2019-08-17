@@ -17,6 +17,7 @@ nuget_config:
   custom_feeds:
     - "team-dynamo-nuget"
     - "ASM"
+    - "autodesk3p"
 
 build:
   before_scripts:
