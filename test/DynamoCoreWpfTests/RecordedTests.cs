@@ -3884,10 +3884,12 @@ namespace DynamoCoreWpfTests
         [Category("RegressionTests")]
         public void PointDoesntUpdateProperlyWithRageChange_MAGN7635()
         {
-            // Details are available in defect 
-            // http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-67635
+			// Details are available in defect 
+			// http://adsk-oss.myjetbrains.com/youtrack/issue/MAGN-67635
 
-            RunCommandsFromFile("7635_PointDoesntUpdateProperlyWithRageChange.xml", (commandTag) =>
+			preloadGeometry = true;
+
+			RunCommandsFromFile("7635_PointDoesntUpdateProperlyWithRageChange.xml", (commandTag) =>
             {
                 var workspace = ViewModel.Model.CurrentWorkspace;
 
