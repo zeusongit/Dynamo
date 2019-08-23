@@ -16,7 +16,6 @@ nuget_config:
   config_file: dynamo-nuget.config
   custom_feeds:
     - "team-dynamo-nuget"
-    - "ASM"
     - "autodesk3p"
 
 build:
