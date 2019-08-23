@@ -14,7 +14,7 @@ $ASMBin = "$ASMBinPackagename.$ASMVer"
 $ASMSource = "autodesk3p"
 
 #=====================TSP=====================#
-$TSPLINESVer = "7.1.1"
+$TSPLINESVer = "7.0.0"
 $TSPLINESBin = "tsplines-a_win_release_intel64_v140.$TSPLINESVer"
 
 #=====================TBB=====================#
