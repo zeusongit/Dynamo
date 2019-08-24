@@ -487,7 +487,8 @@ namespace DynamoCoreWpfTests
                 Assert.Inconclusive("Skipping test known to kill the test framework...");
             }
 
-            OpenModel(ref filePath, true);
+			//OpenModel(ref filePath, true);
+			OpenModel(filePath);
 
             var model = this.ViewModel.Model;
             var workspace = ViewModel.CurrentSpaceViewModel;
