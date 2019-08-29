@@ -37,7 +37,7 @@ try
 
 	#Donwload ASM
 	Set-Location -Path $PackageDirectory
-	C:\Nuget\nuget.exe install -configFile $NugetConfig $ASM -version $ASMVer -source $ASMSource -NoCache
+	C:\Nuget\nuget.exe install -configFile $NugetConfig $ASM -version $ASMVer -source $ASMSource
 
 	#ASM Copy
 	Copy-Item "$PackageDirectory\$ASMBin\bin\*" -Destination "$DynamoExtern\LibG_$ASMBranch\" -Recurse
