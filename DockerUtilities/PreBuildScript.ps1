@@ -59,3 +59,7 @@ catch
 	Write-Host $error[0]
 	throw $LASTEXITCODE
 }
+finally
+{
+	docker system prune -f
+}

@@ -8,11 +8,14 @@ try
 {
 	docker container stop build-test
 	docker container rm build-test
-	docker system prune -f
 }
 catch
 {
 	Write-Host $error[0]
 	throw $LASTEXITCODE
+}
+finally
+{
+	docker system prune -f
 }
 
