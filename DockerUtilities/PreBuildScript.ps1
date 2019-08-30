@@ -56,10 +56,7 @@ try
 }
 catch
 {
+	docker system prune -f
 	Write-Host $error[0]
 	throw $LASTEXITCODE
-}
-finally
-{
-	docker system prune -f
 }

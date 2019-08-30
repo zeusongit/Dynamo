@@ -17,5 +17,6 @@ catch
 finally
 {
 	docker system prune -f
+	Restart-Service *docker*
 }
 
