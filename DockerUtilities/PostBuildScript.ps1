@@ -17,6 +17,6 @@ catch
 finally
 {
 	docker system prune -f
-	Invoke-Item .\RestartDockerDesktop.ps1
+	Invoke-Item .\DockerUtilities\RestartDockerDesktop.ps1
 }
 
