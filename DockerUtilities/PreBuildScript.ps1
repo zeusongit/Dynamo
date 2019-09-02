@@ -57,7 +57,7 @@ try
 catch
 {
 	docker system prune -f	
-	& .\RestartDockerDesktop.ps1
+	Invoke-Item .\RestartDockerDesktop.ps1
 	Write-Host $error[0]
 	throw $LASTEXITCODE
 }
