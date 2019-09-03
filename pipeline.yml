@@ -18,6 +18,25 @@ nuget_config:
     - "team-dynamo-nuget"
     - "autodesk3p"
 
+job_parameters:
+  -
+    type: "string"
+    name: "ENVIRONMENT_BRANCH"
+    defaultValue: ""
+    description: "Branch"
+  -
+    type: "string"
+    name: "ENVIRONMENT_REPO"
+    defaultValue: ""
+    description: "Path or Name of th repository"
+  -
+    type: "choice"
+    name: "ENVIRONMENT_URL_REPO"
+    choices: 
+      - ""
+      - "git.autodesk.com"
+    description: ""
+
 build:
   before_scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\PreBuildScript.ps1"
