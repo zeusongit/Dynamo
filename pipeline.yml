@@ -44,6 +44,12 @@ build:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\BuildScript.ps1"
   after_scripts:
     - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\PostBuildScript.ps1"
+
+code_analysis:
+  sonarqube:
+   useCommonSonar: true
+   msbuildCommands:
+      - "powershell.exe -ExecutionPolicy ByPass -File .\\DockerUtilities\\BuildScript.ps1"
     
 ci_test:
   before_scripts:
