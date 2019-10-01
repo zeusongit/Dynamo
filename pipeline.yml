@@ -28,12 +28,12 @@ job_parameters:
     type: "string"
     name: "ENVIRONMENT_REPO"
     defaultValue: ""
-    description: "Path or Name of th repository"
+    description: "Path or Name of the repository"
   -
     type: "choice"
     name: "ENVIRONMENT_URL_REPO"
     choices: 
-      - ""
+      - "github.com"
       - "git.autodesk.com"
     description: ""
 
