@@ -447,6 +447,18 @@ namespace Dynamo.LibraryUI
             resourceFactory.RegisterProvider(SearchResultDataProvider.serviceIdentifier, new SearchResultDataProvider(model.SearchModel));
         }
 
+        public void DictionaryDump(DynamoModel model)
+        {
+            var nodes = new NodeItemDataProvider(model.SearchModel);
+            string y;
+            var stream = nodes.GetResource(null,out y);
+            /*foreach(var stuff in (stream as MemoryStream).ToArray())
+            {
+                stuff.ToString();
+            }*/
+            var streamReader = new StreamReader(stream);
+            Console.WriteLine(streamReader.ReadToEnd());
+        }
         private void OnResourceStreamRegistered(string key, Stream value)
         {
             Uri url = new Uri(key, UriKind.RelativeOrAbsolute);
