@@ -54,6 +54,22 @@ namespace Dynamo.Controls
         }
     }
 
+    public class TextOptionsConverter : IValueConverter
+    {
+        private static ICSharpCode.AvalonEdit.TextEditorOptions editTextOptions = new ICSharpCode.AvalonEdit.TextEditorOptions();
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            editTextOptions.ShowSpaces = ((DynamoTextOption)value).ShowSpaces;
+            editTextOptions.ShowTabs = ((DynamoTextOption)value).ShowTabs;
+            return editTextOptions;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class PrettyDateConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

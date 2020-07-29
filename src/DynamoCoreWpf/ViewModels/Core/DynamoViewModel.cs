@@ -40,6 +40,10 @@ using ISelectable = Dynamo.Selection.ISelectable;
 
 namespace Dynamo.ViewModels
 {
+    public class DynamoTextOption {
+        public bool ShowTabs;
+        public bool ShowSpaces;
+    }
     public interface IDynamoViewModel : INotifyPropertyChanged
     {
         ObservableCollection<WorkspaceViewModel> Workspaces { get; set; } 
@@ -504,12 +508,12 @@ namespace Dynamo.ViewModels
             }
         }
 
-        private ICSharpCode.AvalonEdit.TextEditorOptions editTextOptions = new ICSharpCode.AvalonEdit.TextEditorOptions();
+        private DynamoTextOption editTextOptions = new DynamoTextOption();
 
         /// <summary>
         /// Gets the text editor options for python script editor.
         /// </summary>
-        public ICSharpCode.AvalonEdit.TextEditorOptions TextOptions
+        public DynamoTextOption TextOptions
         {
             get
             {
@@ -521,7 +525,7 @@ namespace Dynamo.ViewModels
                 if (editTextOptions != value)
                 {
                     editTextOptions = value;
-                    RaisePropertyChanged("TextOptions");
+                    RaisePropertyChanged(nameof(TextOptions));
                 }
             }
         }

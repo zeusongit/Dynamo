@@ -195,6 +195,6 @@
                                       TrueBrush="{StaticResource KeepListStructureHighlight}"
                                       FalseBrush="{StaticResource NotKeepListStructureHighlight}">
     </controls:BooleanToBrushConverter>
-    
+    <controls:TextOptionsConverter x:Key="TextOptionsConverter" />
     
 </ResourceDictionary>
