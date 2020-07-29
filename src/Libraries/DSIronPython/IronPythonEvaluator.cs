@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using Autodesk.DesignScript.Runtime;
 using Dynamo.Events;
-using Dynamo.Logging;
 using Dynamo.Session;
 using Dynamo.Utilities;
 using IronPython.Hosting;
@@ -181,7 +180,7 @@ namespace DSIronPython
             if (ExecutionEvents.ActiveSession != null)
             {
                 dynamic logger = ExecutionEvents.ActiveSession.GetParameterValue(ParameterKeys.Logger);
-                Action<string> logFunction = msg => logger.Log($"{nodeName}: {msg}", LogLevel.ConsoleOnly);
+                Action<string> logFunction = msg => logger.Log($"{nodeName}: {msg}");
                 scope.SetVariable("DynamoPrint", logFunction);
             }
         }
