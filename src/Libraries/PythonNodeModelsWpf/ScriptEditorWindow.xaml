@@ -77,13 +77,7 @@
                 BorderThickness="0"
                 Background="Black"
                 Grid.Row="0">
-            <avalonedit:TextEditor Name="editText"
-                                   FontFamily="Consolas"
-                                   FontSize="10pt"
-                                   ShowLineNumbers="True"
-                                   Background="#272822"
-                                   Foreground="#F8F8F2"
-                                   HorizontalScrollBarVisibility="Disabled" />
+            <avalonedit:TextEditor Name="editText" FontFamily="Consolas" FontSize="10pt" ShowLineNumbers="True" Background="#272822" Foreground="#F8F8F2" HorizontalScrollBarVisibility="Disabled" Options="{Binding TextOptions}"/>
         </Border>
         <Grid HorizontalAlignment="Stretch"
               Grid.Row="1">

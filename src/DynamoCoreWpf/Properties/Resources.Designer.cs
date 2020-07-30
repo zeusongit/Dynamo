@@ -1879,7 +1879,18 @@ namespace Dynamo.Wpf.Properties {
                 return ResourceManager.GetString("DynamoViewSettingsMenuIsIronPythonDialogDisabled", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Show Python Editor Whitespace Characters.
+        /// </summary>
+        public static string DynamoViewSettingsMenuShowTabsAndSpacesInScriptEditor
+        {
+            get
+            {
+                return ResourceManager.GetString("DynamoViewSettingsMenuShowTabsAndSpacesInScriptEditor", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Isolate Selected Geometry.
         /// </summary>
