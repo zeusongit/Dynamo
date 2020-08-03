@@ -188,7 +188,7 @@ namespace DSCPython
                 {
                     if (globalScope == null)
                     {
-                        globalScope = Py.CreateScope(globalScopeName);
+                        globalScope = CreateGlobalScope();
                     }
                     using (PyScope scope = Py.CreateScope())
                     {
@@ -233,6 +233,20 @@ namespace DSCPython
             {
                 PythonEngine.ReleaseLock(gs);
             }
+        }
+
+        /// <summary>
+        /// Creates and initializaes the global Python scope.
+        /// </summary>
+        private static PyScope CreateGlobalScope()
+        {
+            var scope = Py.CreateScope(globalScopeName);
+            // Allows discoverability of modules by inspecting their attributes
+            scope.Exec(@"
+import clr
+clr.setPreload(True)
+");
+            return scope;
         }
 
         /// <summary>
