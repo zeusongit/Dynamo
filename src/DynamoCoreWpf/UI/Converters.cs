@@ -22,6 +22,7 @@ using Dynamo.Utilities;
 using Dynamo.ViewModels;
 using Dynamo.Wpf.Properties;
 using Dynamo.Wpf.ViewModels;
+using Dynamo.Wpf.ViewModels.Core.Converters;
 using DynamoUnits;
 using Color = System.Windows.Media.Color;
 using FlowDirection = System.Windows.FlowDirection;
@@ -59,8 +60,8 @@ namespace Dynamo.Controls
         private static ICSharpCode.AvalonEdit.TextEditorOptions editTextOptions = new ICSharpCode.AvalonEdit.TextEditorOptions();
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            editTextOptions.ShowSpaces = ((DynamoTextOption)value).ShowSpaces;
-            editTextOptions.ShowTabs = ((DynamoTextOption)value).ShowTabs;
+            editTextOptions.ShowSpaces = ((DynamoTextOptions)value).ShowSpaces;
+            editTextOptions.ShowTabs = ((DynamoTextOptions)value).ShowTabs;
             return editTextOptions;
         }
 

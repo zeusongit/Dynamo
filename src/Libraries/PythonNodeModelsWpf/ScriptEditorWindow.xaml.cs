@@ -66,9 +66,8 @@ namespace PythonNodeModelsWpf
             editText.TextArea.TextEntered += OnTextAreaTextEntered;
 
             // Initialize editor with global settings for show/hide tabs and spaces
-            editText.Options = new ICSharpCode.AvalonEdit.TextEditorOptions();
-            //editText.Options.ShowTabs = dynamoViewModel.ShowTabsAndSpacesInScriptEditor;
-            //editText.Options.ShowSpaces = dynamoViewModel.ShowTabsAndSpacesInScriptEditor;
+            TextOptionsConverter converter = new TextOptionsConverter();            
+            editText.Options = (ICSharpCode.AvalonEdit.TextEditorOptions)converter.Convert(dynamoViewModel.TextOptions, null, null, null);
 
             const string highlighting = "ICSharpCode.PythonBinding.Resources.Python.xshd";
             var elem = GetType().Assembly.GetManifestResourceStream(

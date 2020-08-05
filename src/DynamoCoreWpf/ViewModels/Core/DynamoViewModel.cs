@@ -34,16 +34,13 @@ using Dynamo.Wpf.Properties;
 using Dynamo.Wpf.UI;
 using Dynamo.Wpf.ViewModels;
 using Dynamo.Wpf.ViewModels.Core;
+using Dynamo.Wpf.ViewModels.Core.Converters;
 using Dynamo.Wpf.ViewModels.Watch3D;
 using DynamoUtilities;
 using ISelectable = Dynamo.Selection.ISelectable;
 
 namespace Dynamo.ViewModels
 {
-    public class DynamoTextOption {
-        public bool ShowTabs;
-        public bool ShowSpaces;
-    }
     public interface IDynamoViewModel : INotifyPropertyChanged
     {
         ObservableCollection<WorkspaceViewModel> Workspaces { get; set; } 
@@ -508,15 +505,17 @@ namespace Dynamo.ViewModels
             }
         }
 
-        private DynamoTextOption editTextOptions = new DynamoTextOption();
+        private DynamoTextOptions editTextOptions = new DynamoTextOptions();
 
         /// <summary>
         /// Gets the text editor options for python script editor.
         /// </summary>
-        public DynamoTextOption TextOptions
+        public DynamoTextOptions TextOptions
         {
             get
             {
+                editTextOptions.ShowSpaces = ShowTabsAndSpacesInScriptEditor;
+                editTextOptions.ShowTabs = ShowTabsAndSpacesInScriptEditor;
                 return editTextOptions;
             }
 
@@ -541,10 +540,12 @@ namespace Dynamo.ViewModels
             }
             set
             {
+                model.PreferenceSettings.ShowTabsAndSpacesInScriptEditor = value;
+
                 TextOptions.ShowSpaces = value;
                 TextOptions.ShowTabs = value;
-                model.PreferenceSettings.ShowTabsAndSpacesInScriptEditor = value;
                 RaisePropertyChanged(nameof(ShowTabsAndSpacesInScriptEditor));
+                RaisePropertyChanged(nameof(TextOptions));
             }
         }
 

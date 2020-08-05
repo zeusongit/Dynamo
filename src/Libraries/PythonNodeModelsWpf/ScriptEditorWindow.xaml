@@ -19,6 +19,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ui1:SharedResourceDictionary Source="{x:Static ui1:SharedDictionaryManager.DynamoModernDictionaryUri}" />
+                <ui1:SharedResourceDictionary Source="{x:Static ui1:SharedDictionaryManager.DynamoConvertersDictionaryUri}" />
             </ResourceDictionary.MergedDictionaries>
             <ObjectDataProvider x:Key="engineEnum"
                                 MethodName="GetValues"
@@ -51,7 +52,7 @@
                                    Background="#272822"
                                    Foreground="#F8F8F2"
                                    HorizontalScrollBarVisibility="Disabled"
-                                   Options="{Binding TextOptions, FallbackValue={StaticResource TextEditOptions}}" />
+                                   Options="{Binding TextOptions, Converter={StaticResource TextOptionsConverter}, FallbackValue={StaticResource TextEditOptions}}" />
         </Border>
         <Grid HorizontalAlignment="Stretch">
             <Grid.ColumnDefinitions>
