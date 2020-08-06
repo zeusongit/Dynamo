@@ -52,7 +52,7 @@
                                    Background="#272822"
                                    Foreground="#F8F8F2"
                                    HorizontalScrollBarVisibility="Disabled"
-                                   Options="{Binding TextOptions, Converter={StaticResource TextOptionsConverter}, FallbackValue={StaticResource TextEditOptions}}" />
+                                   Options="{Binding TextOptions, Mode=OneWay,Converter={StaticResource TextOptionsConverter}, FallbackValue={StaticResource TextEditOptions}}" />
         </Border>
         <Grid HorizontalAlignment="Stretch">
             <Grid.ColumnDefinitions>
