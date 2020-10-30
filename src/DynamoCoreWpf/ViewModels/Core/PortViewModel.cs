@@ -244,34 +244,20 @@ namespace Dynamo.ViewModels
 
             _node.OnRequestAutoCompletePopupPlacementTarget(popup);
 
-            var zoom = _node.WorkspaceViewModel.Zoom;
-
-            double x;
-            if (PortModel.PortType == PortType.Input)
-            {
-                // Offset popup to the left by its width from left edge of node and constant spacing.
-                // Note: MinWidth property of the control is set to a constant value in the XAML
-                // for the ActualWidth to return a consistent value.
-                x = -autocompleteUISpacing - control.ActualWidth / zoom;
-            }
-            else
-            {
-                // Offset popup to the right by node width from left edge of node.
-                x = autocompleteUISpacing + PortModel.Owner.Width;
-            }
-            // Offset popup down from the upper edge of the node by the node header and corresponding to the respective port.
-            var y = NodeModel.HeaderHeight + PortModel.Index * PortModel.Height;
-            popup.PlacementRectangle = new Rect(x, y, 0, 0);
             popup.CustomPopupPlacementCallback = new CustomPopupPlacementCallback(PlacePopup);
         }
 
         private CustomPopupPlacement[] PlacePopup(Size popupSize, Size targetSize, Point offset)
         {
-            CustomPopupPlacement placement1 = new CustomPopupPlacement(new Point(0, 0), PopupPrimaryAxis.Vertical);
+            var zoom = _node.WorkspaceViewModel.Zoom;
 
-            CustomPopupPlacement placement2 = new CustomPopupPlacement(new Point(10, 20), PopupPrimaryAxis.Horizontal);
+            //Adjusting the UI spacing and height placement of the autocomplete window by the factor of zoom.
+            var x = (-autocompleteUISpacing * zoom) - popupSize.Width;
+            var y = (NodeModel.HeaderHeight + PortModel.Index * PortModel.Height) / zoom;
 
-            CustomPopupPlacement[] ttplaces = new CustomPopupPlacement[] { placement1, placement2 };
+            CustomPopupPlacement placement = new CustomPopupPlacement(new Point(x, y), PopupPrimaryAxis.Vertical);
+
+            CustomPopupPlacement[] ttplaces = new CustomPopupPlacement[] { placement };
 
             return ttplaces;
         }
