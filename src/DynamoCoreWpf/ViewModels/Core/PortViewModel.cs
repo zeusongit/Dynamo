@@ -262,6 +262,18 @@ namespace Dynamo.ViewModels
             // Offset popup down from the upper edge of the node by the node header and corresponding to the respective port.
             var y = NodeModel.HeaderHeight + PortModel.Index * PortModel.Height;
             popup.PlacementRectangle = new Rect(x, y, 0, 0);
+            popup.CustomPopupPlacementCallback = new CustomPopupPlacementCallback(PlacePopup);
+        }
+
+        private CustomPopupPlacement[] PlacePopup(Size popupSize, Size targetSize, Point offset)
+        {
+            CustomPopupPlacement placement1 = new CustomPopupPlacement(new Point(0, 0), PopupPrimaryAxis.Vertical);
+
+            CustomPopupPlacement placement2 = new CustomPopupPlacement(new Point(10, 20), PopupPrimaryAxis.Horizontal);
+
+            CustomPopupPlacement[] ttplaces = new CustomPopupPlacement[] { placement1, placement2 };
+
+            return ttplaces;
         }
 
         private void Workspace_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
