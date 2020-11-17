@@ -23,6 +23,11 @@ namespace Dynamo.Wpf.Extensions
                     var assembly = Assembly.LoadFrom(viewExtension.AssemblyPath);
                     var result = assembly.CreateInstance(viewExtension.TypeName) as IViewExtension;
                     ExtensionLoading?.Invoke(result);
+
+                    Analytics.TrackEvent(
+                        Actions.Load,
+                        Categories.ViewExtensionOperations, viewExtension.TypeName);
+
                     return result;
                 }
                 return null;

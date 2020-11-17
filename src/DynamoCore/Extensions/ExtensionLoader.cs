@@ -33,6 +33,11 @@ namespace Dynamo.Extensions
                 var assembly = Assembly.LoadFrom(extension.AssemblyPath);
                 var result = assembly.CreateInstance(extension.TypeName) as IExtension;
                 ExtensionLoading?.Invoke(result);
+
+                Dynamo.Logging.Analytics.TrackEvent(
+                    Actions.Load,
+                    Categories.ExtensionOperations, extension.TypeName);
+                
                 return result;
             }
             catch(Exception ex)
