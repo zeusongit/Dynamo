@@ -19,6 +19,7 @@ namespace Dynamo.ViewModels
 
         internal PortViewModel PortViewModel { get; set; }
         private List<NodeSearchElement> searchElementsCache;
+        private Dictionary<string, NodeSearchElementViewModel> FilteredDefaultResults = new Dictionary<string, NodeSearchElementViewModel>();
 
         /// <summary>
         /// Cache of default node suggestions, use it in case where
@@ -46,6 +47,7 @@ namespace Dynamo.ViewModels
                 if(foundNode != null)
                 {
                     candidates.Add(foundNode);
+                    FilteredDefaultResults.Add(query, foundNode);
                 }
             }
             DefaultResults = candidates;
@@ -140,6 +142,26 @@ namespace Dynamo.ViewModels
             //check if the input port return type is in the skipped input types list
             if (skippedInputTypes.Any(s => s == inputPortType))
             {
+                IEnumerable<NodeSearchElementViewModel> cacheDefaultResults = DefaultResults;
+                DefaultResults = Enumerable.Empty<NodeSearchElementViewModel>();
+                switch (inputPortType)
+                {
+                    case "int":
+                        DefaultResults = new List<NodeSearchElementViewModel>() { FilteredDefaultResults["Number Slider"], FilteredDefaultResults["Integer Slider"] };
+                        break;
+                    case "double":
+                        DefaultResults = new List<NodeSearchElementViewModel>() { FilteredDefaultResults["Number Slider"], FilteredDefaultResults["Integer Slider"] };
+                        break;
+                    case "string":
+                        DefaultResults = new List<NodeSearchElementViewModel>() { FilteredDefaultResults["String"] };
+                        break;
+                    case "bool":
+                        DefaultResults = new List<NodeSearchElementViewModel>() { FilteredDefaultResults["Boolean"] };
+                        break;
+                    default:
+                        DefaultResults = cacheDefaultResults; 
+                        break;
+                }
                 return elements;
             }
 
