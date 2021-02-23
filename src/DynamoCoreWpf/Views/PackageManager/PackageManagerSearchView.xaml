@@ -94,6 +94,8 @@
             <controls:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter" />
             <controls:BoolToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter" />
             <controls:PrettyDateConverter x:Key="PrettyDateConverter" />
+            <controls:ExternalDepColorConverter x:Key="ExternalDepColorConverter" />
+            
 
             <ResourceDictionary.MergedDictionaries>
                 <ui:SharedResourceDictionary Source="{x:Static ui:SharedDictionaryManager.DynamoModernDictionaryUri}" />
@@ -292,8 +294,12 @@
                                                 <StackPanel Orientation="Vertical" Width="340" IsHitTestVisible="True" >
                                                    <StackPanel Orientation="Horizontal">
                                                       <TextBlock Width ="Auto" MinWidth="235" FontSize="14"  Name="name" Text="{Binding Path=Model.Name}" Margin="5,0,0,0" HorizontalAlignment="Left" Foreground="WhiteSmoke" />
-                                                      <TextBlock Width ="90" FontSize="10"  Name="HostDependency" Text="{Binding Path=Model.HostsString}" Margin="5,0,0,0" HorizontalAlignment="Right" Foreground="LightBlue" 
-                                                                 VerticalAlignment="Center" ToolTip="{x:Static p:Resources.PackageHostDependencyTooltip}"/>
+                                                        <TextBlock Width ="90" FontSize="10"  Name="HostDependency" Text="{Binding Path=Model.HostsString}" Margin="5,0,0,0" HorizontalAlignment="Right"
+                                                                 VerticalAlignment="Center" ToolTip="{x:Static p:Resources.PackageHostDependencyTooltip}" Foreground="{Binding Path=Model.HostsString, Converter={StaticResource ExternalDepColorConverter}}">
+                       
+                                                        </TextBlock>
+                                                        <!--<TextBlock Width ="90" FontSize="10"  Name="HostDependency" Text="{Binding Path=Model.HostsString}" Margin="5,0,0,0" HorizontalAlignment="Right" Foreground="LightBlue" 
+                                                                 VerticalAlignment="Center" ToolTip="{x:Static p:Resources.PackageHostDependencyTooltip}"/>-->
                                                    </StackPanel>
                                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
 
@@ -388,12 +394,21 @@
                                                                 </Button>
                                                             </StackPanel>
                                                         </Border>
-
-
+                                                        <StackPanel Orientation="Horizontal" Margin="5" Width="80">
+                                                            <TextBlock FontSize="15" FontWeight="Bold" Text="   ⓘ " Foreground="Gray">
+                                                                <TextBlock.ToolTip>
+                                                                    <ToolTip Placement="Left">
+                                                                    <TextBlock>
+                                                                        <Run Text=" Dependencies: "/>
+                                                                        <Run Text="{Binding Path=Item1.host_dependencies[0]}"/>
+                                                                    </TextBlock>
+                                                                    </ToolTip>
+                                                                </TextBlock.ToolTip>
+                                                            </TextBlock>
+                                                        </StackPanel>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
-
                                         </ItemsControl>
                                     </StackPanel>
 

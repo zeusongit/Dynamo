@@ -645,6 +645,8 @@ namespace Dynamo.PackageManager
             {
                 hostSelections.Add(new HostComboboxEntry(host));
             }
+            hostSelections.Add(new HostComboboxEntry("CPython3"));
+            hostSelections.Add(new HostComboboxEntry("IPython2"));
             return hostSelections;
         }
 
@@ -1356,6 +1358,8 @@ namespace Dynamo.PackageManager
 
                 Package.Dependencies.Clear();
                 GetAllDependencies().ToList().ForEach(Package.Dependencies.Add);
+
+                //Scan package for python here and append the appropriate version(s) to HostDependencies. 
 
                 var files = GetAllFiles().ToList();
                 var pmExtension = dynamoViewModel.Model.GetPackageManagerExtension();

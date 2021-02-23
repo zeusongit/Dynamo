@@ -64,7 +64,7 @@ namespace Dynamo.PackageManager
                         hostsString += host + "  ";
                     }
                 }
-                return hostsString;
+                return hostsString.TrimEnd();
             }
         }
 

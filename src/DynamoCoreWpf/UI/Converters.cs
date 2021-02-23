@@ -477,6 +477,28 @@ namespace Dynamo.Controls
         }
     }
 
+    public class ExternalDepColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            string text = (string)value;
+            //temp code to add Python engine name to the list of external/host dependencies
+            if (text.Contains("CPython3") || text.Contains("IPython2"))
+            {
+                return new SolidColorBrush(Colors.Teal);
+            }
+            else 
+            {
+                return new SolidColorBrush(Colors.LightBlue);
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return null;
+        }
+    }
+
     public class WorkspaceBackgroundBrushConverter : IValueConverter
     {
         public SolidColorBrush HomeBackgroundBrush { get; set; }

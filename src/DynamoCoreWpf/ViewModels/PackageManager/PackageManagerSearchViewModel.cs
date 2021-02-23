@@ -410,7 +410,8 @@ namespace Dynamo.PackageManager
             {
                 hostFilter.Add(new FilterEntry(host, this));
             }
-
+            hostFilter.Add(new FilterEntry("CPython3", this));
+            hostFilter.Add(new FilterEntry("IPython2", this));
             return hostFilter;
         }
 
