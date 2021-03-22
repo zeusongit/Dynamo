@@ -338,6 +338,9 @@
     </Compile>
     <Compile Include="ViewModels\Watch3D\AttachedProperties.cs" />
     <Compile Include="ViewModels\Watch3D\DynamoEffectsManager.cs" />
+    <Compile Include="Views\Menu\PreferencesView.xaml.cs">
+      <DependentUpon>PreferencesView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\Preview\CameraExtensions.cs" />
     <Compile Include="Views\Preview\PreviewCompactView.xaml.cs">
       <DependentUpon>PreviewCompactView.xaml</DependentUpon>
@@ -433,6 +436,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Controls\GraphUpdateNotificationControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Menu\PreferencesView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -1306,6 +1313,7 @@
     <Content Include="sharpdx_direct3d11_effects_x86.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="ViewModels\PackageManager\Docs\PublishPackageDocumentation.html" />
     <Resource Include="UI\Images\undock_hover.png" />
     <Resource Include="UI\Images\undock_normal.png" />
     <None Include="ViewModels\Watch3D\shaderSource\helix_shader_defs\COMMON\Common.hlsl" />
