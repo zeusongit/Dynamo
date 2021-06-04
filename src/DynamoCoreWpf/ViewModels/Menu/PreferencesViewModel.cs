@@ -1,8 +1,4 @@
-﻿using Dynamo.Configuration;
-using Dynamo.Graph.Workspaces;
-using Dynamo.Models;
-using Dynamo.Wpf.ViewModels.Core.Converters;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -10,6 +6,11 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Dynamo.Configuration;
+using Dynamo.Graph.Workspaces;
+using Dynamo.Logging;
+using Dynamo.Models;
+using Dynamo.Wpf.ViewModels.Core.Converters;
 using Res = Dynamo.Wpf.Properties.Resources;
 
 namespace Dynamo.ViewModels
@@ -48,14 +49,16 @@ namespace Dynamo.ViewModels
         private bool enableTSpline;
         private bool showEdges;
         private bool isolateSelectedGeometry;
+        private bool showCodeBlockLineNumber;
         private RunType runSettingsIsChecked;
+        private Dictionary<string, TabSettings> preferencesTabs;
 
         private PreferenceSettings preferenceSettings;
         private DynamoPythonScriptEditorTextOptions pythonScriptEditorTextOptions;
         private HomeWorkspaceModel homeSpace;
         private DynamoViewModel dynamoViewModel;
         private bool isWarningEnabled;
-        private GeometryScalingOptions optionsGeometryScal = null;
+        private GeometryScalingOptions optionsGeometryScale = null;
         #endregion Private Properties
 
         public GeometryScaleSize ScaleSize { get; set; }
@@ -75,6 +78,22 @@ namespace Dynamo.ViewModels
             {GeometryScaleSize.Large, new Tuple<string, string, string>("large", "0.01", "1,000,000")},
             {GeometryScaleSize.ExtraLarge, new Tuple<string, string, string>("extra large", "1", "100,000,000")}
         };
+
+        /// <summary>
+        /// This property will be used by the Preferences screen to store and retrieve all the settings from the expanders
+        /// </summary>
+        public Dictionary<string, TabSettings> PreferencesTabs
+        {
+            get
+            {
+                return preferencesTabs;
+            }
+            set
+            {
+                preferencesTabs = value;
+                RaisePropertyChanged(nameof(PreferencesTabs));
+            }
+        }
 
         /// <summary>
         /// Controls what the SavedChanges label will display
@@ -108,6 +127,7 @@ namespace Dynamo.ViewModels
 
             }
         }
+
         //This includes all the properties that can be set on the General tab
         #region General Properties
         /// <summary>
@@ -310,16 +330,16 @@ namespace Dynamo.ViewModels
         /// <summary>
         /// This property is used as a container for the description text (GeometryScalingOptions.DescriptionScaleRange) for each radio button (Visual Settings -> Geometry Scaling section)
         /// </summary>
-        public GeometryScalingOptions OptionsGeometryScal
+        public GeometryScalingOptions OptionsGeometryScale
         {
             get
             {
-                return optionsGeometryScal;
+                return optionsGeometryScale;
             }
             set
             {
-                optionsGeometryScal = value;
-                RaisePropertyChanged(nameof(OptionsGeometryScal));
+                optionsGeometryScale = value;
+                RaisePropertyChanged(nameof(OptionsGeometryScale));
             }
         }
 
@@ -330,11 +350,12 @@ namespace Dynamo.ViewModels
         {
             get
             {
-                return showEdges;
+                return dynamoViewModel.RenderPackageFactoryViewModel.ShowEdges;
             }
             set
             {
                 showEdges = value;
+                dynamoViewModel.RenderPackageFactoryViewModel.ShowEdges = value;
                 RaisePropertyChanged(nameof(ShowEdges));
             }
         }
@@ -346,11 +367,12 @@ namespace Dynamo.ViewModels
         {
             get
             {
-                return isolateSelectedGeometry;
+                return dynamoViewModel.BackgroundPreviewViewModel.IsolationMode;
             }
             set
             {
                 isolateSelectedGeometry = value;
+                dynamoViewModel.BackgroundPreviewViewModel.IsolationMode = value;
                 RaisePropertyChanged(nameof(IsolateSelectedGeometry));
             }
         }
@@ -368,6 +390,20 @@ namespace Dynamo.ViewModels
             {
                 dynamoViewModel.RenderPackageFactoryViewModel.MaxTessellationDivisions = value;
                 RaisePropertyChanged(nameof(TessellationDivisions));
+            }
+        }
+
+        public bool ShowCodeBlockLineNumber
+        {
+            get
+            {
+                return preferenceSettings.ShowCodeBlockLineNumber;
+            }
+            set
+            {
+                preferenceSettings.ShowCodeBlockLineNumber = value;
+                showCodeBlockLineNumber = value;
+                RaisePropertyChanged(nameof(ShowCodeBlockLineNumber));
             }
         }
         #endregion
@@ -602,52 +638,98 @@ namespace Dynamo.ViewModels
             AddStyleControl = new StyleItem() { GroupName = "", HexColorString = "#" + GetRandomHexStringColor() };
 
             //This piece of code will populate all the description text for the RadioButtons in the Geometry Scaling section.
-            optionsGeometryScal = new GeometryScalingOptions();
+            optionsGeometryScale = new GeometryScalingOptions();
 
             //This will set the default option for the Geometry Scaling Radio Buttons, the value is comming from the DynamoViewModel
-            optionsGeometryScal.EnumProperty = (GeometryScaleSize)GeometryScalingOptions.ConvertScaleFactorToUI(dynamoViewModel.ScaleFactorLog);
+            optionsGeometryScale.EnumProperty = (GeometryScaleSize)GeometryScalingOptions.ConvertScaleFactorToUI(dynamoViewModel.ScaleFactorLog);
 
-            optionsGeometryScal.DescriptionScaleRange = new ObservableCollection<string>();
-            optionsGeometryScal.DescriptionScaleRange.Add(string.Format(Res.ChangeScaleFactorPromptDescriptionContent, scaleRanges[GeometryScaleSize.Small].Item2,
+            optionsGeometryScale.DescriptionScaleRange = new ObservableCollection<string>();
+            optionsGeometryScale.DescriptionScaleRange.Add(string.Format(Res.ChangeScaleFactorPromptDescriptionContent, scaleRanges[GeometryScaleSize.Small].Item2,
                                                                                               scaleRanges[GeometryScaleSize.Small].Item3));
-            optionsGeometryScal.DescriptionScaleRange.Add(string.Format(Res.ChangeScaleFactorPromptDescriptionContent, scaleRanges[GeometryScaleSize.Medium].Item2,
+            optionsGeometryScale.DescriptionScaleRange.Add(string.Format(Res.ChangeScaleFactorPromptDescriptionContent, scaleRanges[GeometryScaleSize.Medium].Item2,
                                                                                               scaleRanges[GeometryScaleSize.Medium].Item3));
-            optionsGeometryScal.DescriptionScaleRange.Add(string.Format(Res.ChangeScaleFactorPromptDescriptionContent, scaleRanges[GeometryScaleSize.Large].Item2,
+            optionsGeometryScale.DescriptionScaleRange.Add(string.Format(Res.ChangeScaleFactorPromptDescriptionContent, scaleRanges[GeometryScaleSize.Large].Item2,
                                                                                               scaleRanges[GeometryScaleSize.Large].Item3));
-            optionsGeometryScal.DescriptionScaleRange.Add(string.Format(Res.ChangeScaleFactorPromptDescriptionContent, scaleRanges[GeometryScaleSize.ExtraLarge].Item2,
+            optionsGeometryScale.DescriptionScaleRange.Add(string.Format(Res.ChangeScaleFactorPromptDescriptionContent, scaleRanges[GeometryScaleSize.ExtraLarge].Item2,
                                                                                               scaleRanges[GeometryScaleSize.ExtraLarge].Item3));
 
             SavedChangesLabel = string.Empty;
             SavedChangesTooltip = string.Empty;
 
-            this.PropertyChanged += model_PropertyChanged;
+            preferencesTabs = new Dictionary<string, TabSettings>();
+            preferencesTabs.Add("General", new TabSettings() { Name = "General", ExpanderActive = string.Empty });
+            preferencesTabs.Add("Features",new TabSettings() { Name = "Features", ExpanderActive = string.Empty });
+            preferencesTabs.Add("VisualSettings",new TabSettings() { Name = "VisualSettings", ExpanderActive = string.Empty });
+            this.PropertyChanged += Model_PropertyChanged;
         }
 
         /// <summary>
         /// Listen for the PropertyChanged event and updates the saved changes label accordingly
         /// </summary>
-        private void model_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void Model_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            string description = string.Empty;
+            // C# does not support going through all cases when one of the case is true
             switch (e.PropertyName)
             {
-                case "SelectedLanguage":
-                case "SelectedFontSize":
-                case "SelectedNumberFormat":
-                case "RunSettingsIsChecked":
-                case "RunPreviewIsChecked":
-                case "StyleItemsList":
-                case "OptionsGeometryScal":
-                case "ShowEdges":
-                case "IsolateSelectedGeometry":
-                case "TessellationDivisions":
-                case "SelectedPythonEngine":
-                case "HideIronPythonAlertsIsChecked":
-                case "ShowWhitespaceIsChecked":
-                case "NodeAutocompleteIsChecked":
-                case "EnableTSplineIsChecked":
-                    UpdateSavedChangesLabel();
+                case nameof(SelectedLanguage):
+                    // Do nothing for now
                     break;
+                case nameof(SelectedFontSize):
+                    // Do nothing for now
+                    break;
+                case nameof(SelectedNumberFormat):
+                    description = Res.DynamoViewSettingMenuNumberFormat;
+                    goto default;
+                case nameof(RunSettingsIsChecked):
+                    description = Res.PreferencesViewRunSettingsLabel;
+                    goto default;
+                case nameof(RunPreviewIsChecked):
+                    description = Res.DynamoViewSettingShowRunPreview;
+                    goto default;
+                case nameof(StyleItemsList):
+                    // Do nothing for now
+                    break;
+                case nameof(OptionsGeometryScale):
+                    description = Res.DynamoViewSettingsMenuChangeScaleFactor;
+                    goto default;
+                case nameof(ShowEdges):
+                    description = Res.PreferencesViewVisualSettingShowEdges;
+                    goto default;
+                case nameof(IsolateSelectedGeometry):
+                    description = Res.PreferencesViewVisualSettingsIsolateSelectedGeo;
+                    goto default;
+                case nameof(TessellationDivisions):
+                    description = Res.PreferencesViewVisualSettingsRenderPrecision;
+                    goto default;
+                case nameof(SelectedPythonEngine):
+                    description = Res.PreferencesViewDefaultPythonEngine;
+                    goto default;
+                case nameof(HideIronPythonAlertsIsChecked):
+                    description = Res.PreferencesViewIsIronPythonDialogDisabled;
+                    goto default;
+                case nameof(ShowWhitespaceIsChecked):
+                    description = Res.PreferencesViewShowWhitespaceInPythonEditor;
+                    goto default;
+                case nameof(NodeAutocompleteIsChecked):
+                    description = Res.PreferencesViewEnableNodeAutoComplete;
+                    goto default;
+                case nameof(EnableTSplineIsChecked):
+                    description = Res.PreferencesViewEnableTSplineNodes;
+                    goto default;
+                case nameof(ShowCodeBlockLineNumber):
+                    description = Res.PreferencesViewShowCodeBlockNodeLineNumber;
+                    goto default;
                 default:
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        // Log switch on each setting and use description equals to label name
+                        Dynamo.Logging.Analytics.TrackEvent(
+                            Actions.Switch,
+                            Categories.Preferences,
+                            description);
+                        UpdateSavedChangesLabel();
+                    }
                     break;
             }
         }
@@ -783,6 +865,47 @@ namespace Dynamo.ViewModels
         public static int ConvertScaleFactorToUI(int scaleValue)
         {
            return (scaleValue / 2) + 1;
+        }
+    }
+
+    /// <summary>
+    /// This class represent a Tab and is used for store just one Expander info(due that just one Expander can be expanded at one time)
+    /// </summary>
+    public class TabSettings : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Tab Name (e.g. Features or Visual Settings)
+        /// </summary>
+        public string Name;
+        private string expanderActive;
+
+        /// <summary>
+        /// This property hold the name for the current Expander expanded
+        /// </summary>
+        public string ExpanderActive
+        {
+            get
+            {
+                return expanderActive;
+            }
+            set
+            {
+                if(value != null)
+                {
+                    expanderActive = value;
+                    OnPropertyChanged(nameof(ExpanderActive));
+                }
+                else
+                {
+                    expanderActive = string.Empty;
+                }
+            }
         }
     }
 }

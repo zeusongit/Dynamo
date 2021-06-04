@@ -133,6 +133,15 @@ namespace Dynamo.Wpf.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Add Style.
+        /// </summary>
+        public static string AddStyleButton {
+            get {
+                return ResourceManager.GetString("AddStyleButton", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Add.
         /// </summary>
         public static string AddToLibraryButton {
@@ -1791,15 +1800,6 @@ namespace Dynamo.Wpf.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Render Precision.
-        /// </summary>
-        public static string DynamoViewSettingMenuRenderPrecision {
-            get {
-                return ResourceManager.GetString("DynamoViewSettingMenuRenderPrecision", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Agreement to Collect Usability Data.
         /// </summary>
         public static string DynamoViewSettingMenuShowDataReportingDialog {
@@ -1886,15 +1886,6 @@ namespace Dynamo.Wpf.Properties {
         public static string DynamoViewSettingsMenuChangeScaleFactor {
             get {
                 return ResourceManager.GetString("DynamoViewSettingsMenuChangeScaleFactor", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Show CodeBlockNode Line Numbers.
-        /// </summary>
-        public static string DynamoViewSettingsMenuShowCodeBlockNodeLineNumber {
-            get {
-                return ResourceManager.GetString("DynamoViewSettingsMenuShowCodeBlockNodeLineNumber", resourceCulture);
             }
         }
         
@@ -3474,6 +3465,15 @@ namespace Dynamo.Wpf.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to DynamoCoreWpf;NodeAutocompleteDocumentation.html.
+        /// </summary>
+        public static string NodeAutocompleteDocumentationUriString {
+            get {
+                return ResourceManager.GetString("NodeAutocompleteDocumentationUriString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enable Periodic Update.
         /// </summary>
         public static string NodeContextMenuEnablePeriodicUpdate {
@@ -4395,6 +4395,15 @@ namespace Dynamo.Wpf.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Learn more about Node Autocomplete feature..
+        /// </summary>
+        public static string PreferencesViewEnableNodeAutoCompleteTooltipText {
+            get {
+                return ResourceManager.GetString("PreferencesViewEnableNodeAutoCompleteTooltipText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enable T-Spline nodes.
         /// </summary>
         public static string PreferencesViewEnableTSplineNodes {
@@ -4499,6 +4508,15 @@ namespace Dynamo.Wpf.Properties {
         public static string PreferencesViewSavedChangesTooltip {
             get {
                 return ResourceManager.GetString("PreferencesViewSavedChangesTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show CodeBlockNode Line Numbers.
+        /// </summary>
+        public static string PreferencesViewShowCodeBlockNodeLineNumber {
+            get {
+                return ResourceManager.GetString("PreferencesViewShowCodeBlockNodeLineNumber", resourceCulture);
             }
         }
         
@@ -5034,6 +5052,24 @@ namespace Dynamo.Wpf.Properties {
         public static string RerunButtonToolTip {
             get {
                 return ResourceManager.GetString("RerunButtonToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset CPython.
+        /// </summary>
+        public static string ResetCPythonButtonText {
+            get {
+                return ResourceManager.GetString("ResetCPythonButtonText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resets CPython environment by reloading modules..
+        /// </summary>
+        public static string ResetCPythonButtonToolTip {
+            get {
+                return ResourceManager.GetString("ResetCPythonButtonToolTip", resourceCulture);
             }
         }
         
