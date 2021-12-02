@@ -2670,7 +2670,9 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="border" Property="Background" Value="#707070" />
+                            <Setter TargetName="border" Property="BorderBrush" Value="#707070" />
                             <Setter TargetName="textBlock" Property="Opacity" Value="0.7" />
+                            <Setter Property="Cursor" Value="No" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -4175,4 +4177,9 @@
     </Style>
     <SolidColorBrush x:Key="RealTimeInfoWindowIconColor" Color="#38ABDF" />
     <SolidColorBrush x:Key="RealTimeInfoWindowBackgroundColor" Color="#535353" />
+    <Style x:Key="PopupStepCounterFontStyle"
+           TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontFamily" Value="Artifakt Element" />
+    </Style>
 </ResourceDictionary>
