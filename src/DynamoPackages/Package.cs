@@ -290,8 +290,8 @@ namespace Dynamo.PackageManager
                     SiteUrl = body.site_url,
                     RepositoryUrl = body.repository_url,
                     HostDependencies = body.host_dependencies,
-                    //CopyrightHolder=body.copyright_holder,
-                    //CopyrightYear = body.copyright_year,
+                    CopyrightHolder=body.copyright_holder,
+                    CopyrightYear = body.copyright_year,
                     Header = body
                 };
                 
