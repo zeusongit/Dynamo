@@ -327,13 +327,6 @@
 				},
 				"UIAutomation": [
 					{
-						"Sequence": 1,
-						"ControlType": "button",
-						"WindowName": "PopupWindow",
-						"Name": "NextButton",
-						"Action": "disable"
-					},
-					{
 						"Sequence": 2,
 						"ControlType": "function",
 						"Name": "ExecuteTermsOfServiceFlow",
@@ -427,6 +420,7 @@
 					"DynamicHostWindow": true,
 					"HostUIElementString": "PackageSearch",
 					"VerticalPopupOffset": 40,
+					"ElementName": "NextButton",
 					"HorizontalPopupOffset": 470,
 					"HtmlPage": {
 						"FileName": "searchPackages.html",
@@ -439,11 +433,12 @@
 				},
 				"UIAutomation": [
 					{
-						"Sequence": 1,
+						"Sequence": 0,
 						"ControlType": "function",
 						"Name": "ExecutePackageSearch",
 						"ExecuteCleanUpForward": false,
 						"ExecuteCleanUpBackward": false,
+						"ElementName": "NextButton",
 						"Action": "execute",
 						"UpdatePlacementTarget": true
 					},
@@ -460,6 +455,20 @@
 							}
 						],
 						"UpdatePlacementTarget": true
+					},
+					{
+						"Sequence": 1,
+						"ControlType": "button",
+						"WindowName": "PopupWindow",
+						"Name": "NextButton",
+						"Action": "disable"
+					},
+					{
+						"Sequence": 2,
+						"ControlType": "function",
+						"Name": "EnableNextButton",
+						"ElementName": "NextButton",
+						"Action": "execute"
 					}
 				]
 			},
@@ -692,7 +701,7 @@
 				"Type": "tooltip",
 				"TooltipPointerDirection": "bottom_left",
 				"Width": 480,
-				"Height": 230,
+				"Height": 250,
 				"ShowLibrary": true,
 				"StepContent": {
 					"Title": "PackagesGuideNavigatePackagesTitle",
@@ -702,13 +711,13 @@
 					"PopupPlacement": "right",
 					"HostUIElementString": "sidebarGrid",
 					"WindowName": "LibraryView",
-					"VerticalPopupOffset": 600,
+					"VerticalPopupOffset": -70,
 					"HorizontalPopupOffset": -30,
 					"HighlightRectArea": {
 						"HighlightColor": "#EF9362",
 						"UIElementTypeString": "WebBrowser",
 						"UIElementGridContainer": "sidebarGrid",
-						"WindowElementNameString": "Autodesk Sample",
+						"WindowElementNameString": "SampleLibraryUI",
 						"WindowName": "LibraryView"
 					}
 				},
@@ -720,7 +729,7 @@
 						"Name": "SubscribeNextButtonClickEvent",
 						"Action": "execute",
 						"JSFunctionName": "collapseExpandPackage",
-						"JSParameters": [ "Autodesk Sample" ],
+						"JSParameters": [ "SampleLibraryUI" ],
 						"AutomaticHandlers": [
 							{
 								"HandlerElement": "NextButton",
@@ -742,7 +751,31 @@
 						"ControlType": "JSFunction",
 						"Name": "InvokeJSFunction",
 						"JSFunctionName": "subscribePackageClickedEvent",
-						"JSParameters": [ "Autodesk Sample" ],
+						"JSParameters": [ "SampleLibraryUI" ],
+						"Action": "execute"
+					},
+					{
+						"Sequence": 4,
+						"ControlType": "JSFunction",
+						"Name": "InvokeJSFunction",
+						"JSFunctionName": "getDocumentClientRect",
+						"JSParameters": [ "SampleLibraryUI" ],
+						"Action": "execute"
+					},
+					{
+						"Sequence": 5,
+						"ControlType": "function",
+						"Name": "LibraryScrollToBottom",
+						"JSFunctionName": "scrollToBottom",
+						"JSParameters": [],
+						"Action": "execute"
+					},
+					{
+						"Sequence": 6,
+						"ControlType": "function",
+						"Name": "CalculateLibraryItemLocation",
+						"JSFunctionName": "getDocumentClientRect",
+						"JSParameters": [ "SampleLibraryUI" ],
 						"Action": "execute"
 					}
 				]

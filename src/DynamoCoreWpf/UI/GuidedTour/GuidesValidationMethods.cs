@@ -13,6 +13,7 @@ using static Dynamo.PackageManager.PackageManagerSearchViewModel;
 using static Dynamo.Wpf.UI.GuidedTour.Guide;
 using Dynamo.Wpf.Views.GuidedTour;
 using Dynamo.Utilities;
+using Newtonsoft.Json.Linq;
 
 namespace Dynamo.Wpf.UI.GuidedTour
 {
@@ -27,9 +28,12 @@ namespace Dynamo.Wpf.UI.GuidedTour
         internal static GuidesManager CurrentExecutingGuidesManager;
         
         private static ExitGuide exitGuide;
-        private const string AutodeskSamplePackage = "Sample View Extension";
+        private const string AutodeskSamplePackage = "Dynamo Samples";
         private static PackageManagerSearchViewModel viewModel;
         private static PackageDownloadHandle packageDownloadHandle;
+
+        private static Action<object, System.ComponentModel.PropertyChangedEventArgs> searchPackagesPropertyChanged;
+        private static bool searchPackagesLoaded;
 
         internal static PackageManagerSearchViewModel packagesViewModel;
 
@@ -105,7 +109,6 @@ namespace Dynamo.Wpf.UI.GuidedTour
             CurrentExecutingStep = stepInfo;
             Window ownedWindow = Guide.FindWindowOwned(stepInfo.HostPopupInfo.WindowName, stepInfo.MainWindow as Window);
 
-
             if (enableFunction)
             {
                 if(ownedWindow != null)
@@ -116,8 +119,9 @@ namespace Dynamo.Wpf.UI.GuidedTour
             }
             else
             {
-                //Tries to close the TermsOfUseView or the PackageManagerSearchView if they were opened previously
-                Guide.CloseWindowOwned(stepInfo.HostPopupInfo.WindowName, stepInfo.MainWindow as Window);
+                //Tries to close the TermsOfUseView or the PackageManagerSearchView if they were opened previously (just if the flow if FORWARD from Step6 to Step7)
+                if (uiAutomationData.ExecuteCleanUpForward && currentFlow == GuideFlow.FORWARD)
+                    Guide.CloseWindowOwned(stepInfo.HostPopupInfo.WindowName, stepInfo.MainWindow as Window);
             }
         }
 
@@ -233,9 +237,11 @@ namespace Dynamo.Wpf.UI.GuidedTour
                 if (packageManagerViewModel == null)
                     return;
 
+                searchPackagesLoaded = false;
                 //Due that we need to search the Autodesk Sample package after the initial search is completed 
                 //we need to subscribe to the PropertyChanged event so we will know when the SearchState property is equal to Results (meaning that got results)
-                packageManagerViewModel.PropertyChanged += PackageManagerViewModel_PropertyChanged;          
+                searchPackagesPropertyChanged = (sender, e) => { PackageManagerViewModel_PropertyChanged(sender, e, uiAutomationData); } ;
+                packageManagerViewModel.PropertyChanged += searchPackagesPropertyChanged.Invoke;
             }
             else
             {
@@ -278,7 +284,7 @@ namespace Dynamo.Wpf.UI.GuidedTour
             PackageManagerSearchViewModel packageManagerViewModel = packageManager.DataContext as PackageManagerSearchViewModel;
             if (packageManagerViewModel == null)
                 return;
-            packageManagerViewModel.PropertyChanged -= PackageManagerViewModel_PropertyChanged;
+            packageManagerViewModel.PropertyChanged -= searchPackagesPropertyChanged.Invoke;
             packageManager.Close();
         }
 
@@ -287,7 +293,7 @@ namespace Dynamo.Wpf.UI.GuidedTour
         /// </summary>
         /// <param name="sender">PackageManagerSearchViewModel</param>
         /// <param name="e">PropertyChanged</param>
-        private static void PackageManagerViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private static void PackageManagerViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e, StepUIAutomation uiAutomationData)
         {
             PackageManagerSearchViewModel packageManagerViewModel = sender as PackageManagerSearchViewModel;
             if (packageManagerViewModel == null) return;
@@ -299,9 +305,24 @@ namespace Dynamo.Wpf.UI.GuidedTour
                     //Put the name of the Package to be searched in the SearchTextBox
                     packageManagerViewModel.SearchText = AutodeskSamplePackage;
 
+                    searchPackagesLoaded = true;
+
+                    EnableNextButton(null, uiAutomationData, true, GuideFlow.FORWARD);
+
                     //Unsubscribe from the PropertyChanged event otherwise it will enter everytime the SearchTextBox is updated
-                    packageManagerViewModel.PropertyChanged -= PackageManagerViewModel_PropertyChanged;
+                    packageManagerViewModel.PropertyChanged -= searchPackagesPropertyChanged.Invoke;
+
                 }
+            }
+        }
+
+        internal static void EnableNextButton(Step stepInfo, StepUIAutomation uiAutomationData, bool enableFunction, GuideFlow currentFlow)
+        {
+            if (searchPackagesLoaded)
+            {
+                var nextButton = Guide.FindChild((CurrentExecutingStep.StepUIPopup as PopupWindow).mainPopupGrid, uiAutomationData.ElementName) as Button;
+                if(nextButton != null)
+                    nextButton.IsEnabled = true;
             }
         }
 
@@ -477,6 +498,43 @@ namespace Dynamo.Wpf.UI.GuidedTour
                     return;
                 dynamoView.CloseExtensionTab(closeButton, null);
             }
+        }
+
+        /// <summary>
+        /// This method will calculate the Popup location based in a item from the Library
+        /// </summary>
+        internal static void CalculateLibraryItemLocation(Step stepInfo, StepUIAutomation uiAutomationData, bool enableFunction, GuideFlow currentFlow)
+        {
+            CurrentExecutingStep = stepInfo;
+            if (uiAutomationData == null) return;
+            var jsFunctionName = uiAutomationData.JSFunctionName;
+            object[] jsParameters = new object[] { uiAutomationData.JSParameters[0] };
+            //Create the array for the paramateres that will be sent to the WebBrowser.InvokeScript Method
+            object[] parametersInvokeScript = new object[] { jsFunctionName, jsParameters };
+            //Execute the JS function with the provided parameters
+            var returnedObject = ResourceUtilities.ExecuteJSFunction(CurrentExecutingStep.MainWindow, CurrentExecutingStep.HostPopupInfo, parametersInvokeScript);
+            if (returnedObject == null) return;
+            //Due that the returned object is a json then we get the values from the json
+            JObject json = JObject.Parse(returnedObject.ToString());
+            double top = Convert.ToDouble(json["client"]["top"].ToString());
+            double bottom = Convert.ToDouble(json["client"]["bottom"].ToString());
+            //We calculate the Vertical location taking the average position "(top + bottom) / 2" and the height of the popup
+            double verticalPosition = (top + bottom) / 2 - CurrentExecutingStep.Height / 2;
+            CurrentExecutingStep.UpdatePopupVerticalPlacement(verticalPosition);
+        }
+
+        /// <summary>
+        /// This method will call a js function that will scroll down until the bottom of the page
+        /// </summary>
+        internal static void LibraryScrollToBottom(Step stepInfo, StepUIAutomation uiAutomationData, bool enableFunction, GuideFlow currentFlow)
+        {
+            CurrentExecutingStep = stepInfo;
+            if (uiAutomationData == null) return;
+            string jsFunctionName = uiAutomationData.JSFunctionName;
+            //Create the array for the paramateres that will be sent to the WebBrowser.InvokeScript Method
+            object[] parametersInvokeScript = new object[] { jsFunctionName, new object[] { } };
+            //Execute the JS function with the provided parameters
+            ResourceUtilities.ExecuteJSFunction(CurrentExecutingStep.MainWindow, CurrentExecutingStep.HostPopupInfo, parametersInvokeScript);
         }
     }
 }
