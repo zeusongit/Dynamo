@@ -63,7 +63,7 @@ namespace DSCore.IO
         ///     Reads a text file and returns the contents as a string.
         /// </summary>
         /// <param name="file"> File object to read text from</param>
-        /// <returns name="string">Contents of the text file.</returns>
+        /// <returns name="string">Contents of the text file (UTF-8).</returns>
         /// <search>read file,text,file</search>
         public static string ReadText(FileInfo file)
         {
