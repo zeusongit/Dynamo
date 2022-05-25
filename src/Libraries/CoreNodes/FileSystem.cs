@@ -67,7 +67,7 @@ namespace DSCore.IO
         /// <search>read file,text,file</search>
         public static string ReadText(FileInfo file)
         {
-            return System.IO.File.ReadAllText(file.FullName);
+            return File.ReadAllText(file.FullName, System.Text.Encoding.UTF8);
         }
 
         /// <summary>
