@@ -1350,13 +1350,12 @@ namespace Dynamo.PackageManager
             }
             else
             {
-                PackageContents.Remove(PackageContents
-                    .First(x => x.Name == packageItemRootViewModel.Name));
-                return;
+                AdditionalFiles.Remove(AdditionalFiles
+                    .First(x => x == fileName));
             }
-
-            PackageContents.Remove(PackageContents
-                .First(x => x.FileInfo?.FullName == packageItemRootViewModel.FileInfo.FullName));
+                        
+            RefreshPackageContents();
+            return;
         }
 
         private bool CanShowAddFileDialogAndAdd()
