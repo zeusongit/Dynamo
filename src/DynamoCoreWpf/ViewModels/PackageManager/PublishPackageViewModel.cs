@@ -1335,7 +1335,20 @@ namespace Dynamo.PackageManager
         {
             if (!(parameter is PackageItemRootViewModel packageItemRootViewModel)) return;
 
-            if (packageItemRootViewModel.FileInfo == null || packageItemRootViewModel.FileInfo == null)
+            string fileName = packageItemRootViewModel.FileInfo == null ? packageItemRootViewModel.Name : packageItemRootViewModel.FileInfo.FullName;
+            string fileType = packageItemRootViewModel.DependencyType.ToString();
+
+            if (fileName.ToLower().EndsWith(".dll") || fileType.Equals(DependencyType.Assembly))
+            {
+                Assemblies.Remove(Assemblies
+                    .First(x => x.Name == Path.GetFileNameWithoutExtension(fileName)));
+            }
+            else if (fileType.Equals(DependencyType.CustomNode))
+            {
+                CustomNodeDefinitions.Remove(CustomNodeDefinitions
+                    .First(x => x.DisplayName == fileName));
+            }
+            else
             {
                 PackageContents.Remove(PackageContents
                     .First(x => x.Name == packageItemRootViewModel.Name));
