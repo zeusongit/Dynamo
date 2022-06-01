@@ -100,6 +100,23 @@ namespace Dynamo.PackageManager
         }
 
         /// <summary>
+        /// Gets latest versions of all packages for the current user
+        /// </summary>
+        /// <param name="packageInfo"></param>
+        /// <returns></returns>
+        internal PackageHeader GetMyPackages()
+        {
+            var header = FailFunc.TryExecute(() =>
+            {
+                var nv = new GetMyPackages();
+                var pkgResponse = this.client.ExecuteAndDeserializeWithContent<PackageHeader>(nv);
+                return pkgResponse.content;
+            }, null);
+
+            return header;
+        }
+
+        /// <summary>
         /// Gets the metadata for a specific version of a package.
         /// </summary>
         /// <param name="packageInfo">Name and version of a package</param>
@@ -259,6 +276,7 @@ namespace Dynamo.PackageManager
         {
             var pkg = new PackageInfo(package.Name, new Version(package.VersionName));
             var mnt = GetPackageMaintainers(pkg);
+            var tst= GetMyPackages();
             return (mnt != null) && (mnt.maintainers.Any(maintainer => maintainer.username.Equals(username)));
         }
     }
