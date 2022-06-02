@@ -102,14 +102,13 @@ namespace Dynamo.PackageManager
         /// <summary>
         /// Gets latest versions of all packages for the current user
         /// </summary>
-        /// <param name="packageInfo"></param>
         /// <returns></returns>
-        internal PackageHeader GetMyPackages()
+        internal UserPackages GetMyPackages()
         {
             var header = FailFunc.TryExecute(() =>
             {
                 var nv = new GetMyPackages();
-                var pkgResponse = this.client.ExecuteAndDeserializeWithContent<PackageHeader>(nv);
+                var pkgResponse = this.client.ExecuteAndDeserializeWithContent<UserPackages>(nv);
                 return pkgResponse.content;
             }, null);
 
