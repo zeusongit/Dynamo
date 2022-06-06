@@ -1606,9 +1606,17 @@ namespace Dynamo.ViewModels
 
                 var directoryName = Path.GetDirectoryName(filePath);
 
-                // Display trust warning when file is not among trust location and warning feature is on
-                bool displayTrustWarning = !PreferenceSettings.IsTrustedLocation(directoryName)
-                    && !filePath.EndsWith("dyf")
+                if (!PreferenceSettings.IsTrustedLocation(directoryName) && !DynamoModel.IsTestMode)
+                {
+                    RunSettings.ForceBlockRun = true;
+                }
+                else
+                {
+                    RunSettings.ForceBlockRun = false;
+                }
+                ExecuteCommand(new DynamoModel.OpenFileCommand(filePath, forceManualMode));
+                if (!PreferenceSettings.IsTrustedLocation(directoryName) 
+                    && (currentWorkspaceViewModel?.IsHomeSpace ?? false)
                     && !DynamoModel.IsTestMode
                     && !PreferenceSettings.DisableTrustWarnings
                     && FileTrustViewModel != null;
