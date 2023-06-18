@@ -22,7 +22,7 @@ jobs:
       run: |
         cat pr/NR
         echo "PRNumber=`cat pr/NR`" >> "$GITHUB_OUTPUT"
-        echo "WFNumber=`cat pr/WR`" >> "$GITHUB_OUTPUT"
+        echo "WFNumber=`cat pr/WN`" >> "$GITHUB_OUTPUT"
         echo "Diff1=`cat pr/Diff1`" >> "$GITHUB_OUTPUT"
         echo "Diff2=`cat pr/Diff2`" >> "$GITHUB_OUTPUT"
         echo "TIMESTAMP=`date +%Y-%m-%d-%H:%M:%S`" >> "$GITHUB_OUTPUT"
@@ -70,17 +70,19 @@ jobs:
           
           WNNUM=${{ needs.fetch-PR-Data.outputs.WFNumber }}
           echo $WNNUM
+          REPO=${{ github.repository }}
+          
           ## Setting this to not fail the workflow while deleting cache keys. 
           set +e
           echo "Deleting caches..."
           echo "Deleting: $WNNUM-cache-net60Win-current"
-          gh actions-cache delete $WNNUM-cache-net60Win-current --confirm
+          gh actions-cache delete $WNNUM-cache-net60Win-current -R $REPO --confirm
           echo "Deleting: $WNNUM-cache-current"
-          gh actions-cache delete $WNNUM-cache-current --confirm
+          gh actions-cache delete $WNNUM-cache-current -R $REPO --confirm
           echo "Deleting: $WNNUM-cache-master"
-          gh actions-cache delete $WNNUM-cache-net60Win-master --confirm
+          gh actions-cache delete $WNNUM-cache-net60Win-master -R $REPO --confirm
           echo "Deleting: $WNNUM-cache-net60Win-master"
-          gh actions-cache delete $WNNUM-cache-master --confirm
+          gh actions-cache delete $WNNUM-cache-master -R $REPO --confirm
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
@@ -126,7 +128,7 @@ jobs:
           body: |
             ${{ needs.fetch-PR-Data.outputs.Diff1 }}
             ${{ needs.fetch-PR-Data.outputs.Diff2 }}
-            "(Updated: ${{ needs.fetch-PR-Data.outputs.TIMESTAMP }})"
+            (Updated: ${{ needs.fetch-PR-Data.outputs.TIMESTAMP }})
       - name: Update comment resolved
         if: |
           steps.fc.outputs.comment-id != '' &&
@@ -134,9 +136,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v3
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
+          edit-mode: replace
           body: |
-
             ":white_check_mark: **Bin-Diff Issue Resolved.**"
-            "(Updated: ${{ needs.fetch-PR-Data.outputs.TIMESTAMP }})"
-          reactions-edit-mode: replace
-          reactions: '+1'
+            (Updated: ${{ needs.fetch-PR-Data.outputs.TIMESTAMP }})
