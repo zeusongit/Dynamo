@@ -1651,7 +1651,7 @@ namespace Dynamo.PackageManager
                 Package.VersionName = FullVersion;
                 Package.Description = Description;
                 Package.Group = Group;
-                Package.Keywords = KeywordList;
+                Package.Keywords = KeywordList == null ? Enumerable.Empty<string>() : KeywordList;
                 Package.License = string.IsNullOrEmpty(License) ? defaultLicense : License;
                 Package.SiteUrl = SiteUrl;
                 Package.RepositoryUrl = RepositoryUrl;
