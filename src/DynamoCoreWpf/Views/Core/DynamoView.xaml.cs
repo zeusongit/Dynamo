@@ -43,9 +43,12 @@ using Dynamo.Wpf.Views;
 using Dynamo.Wpf.Views.Debug;
 using Dynamo.Wpf.Views.FileTrust;
 using Dynamo.Wpf.Windows;
+using Greg;
 using HelixToolkit.Wpf.SharpDX;
 using ICSharpCode.AvalonEdit;
+using Newtonsoft.Json.Linq;
 using PythonNodeModels;
+using RestSharp;
 using Brush = System.Windows.Media.Brush;
 using Exception = System.Exception;
 using Image = System.Windows.Controls.Image;
@@ -2897,6 +2900,54 @@ namespace Dynamo.Controls
             var dynViewModel = DataContext as DynamoViewModel;
             if (dynViewModel.FileTrustViewModel == null) return;
             dynViewModel.FileTrustViewModel.ShowWarningPopup = true;
+        }
+
+        private AuthenticationManager authManager;
+        private string CollectionId { get; set; }
+        private string ExchangeContainerId { get; set; }
+        private static void AddHeadersToPostRequest(RestRequest request, string token)
+        {
+            request.AddHeader("Accept", "*/*");
+            request.AddHeader("Authorization", $"Bearer {token}");
+            request.AddHeader("Content-Type", "application/json");
+        }
+        private void TestFDX_Click(object sender, RoutedEventArgs e)
+        {
+            var dynViewModel = DataContext as DynamoViewModel;
+            authManager = dynViewModel.Model.AuthenticationManager;
+            string tkn = string.Empty;
+            if (authManager.IsLoggedInInitial())
+            {
+                tkn = ((IOAuth2AccessTokenProvider)authManager.AuthProvider).GetAccessToken();
+            }
+
+            if (!string.IsNullOrEmpty(tkn))
+            {
+                //var stageClientUrl = "https://developer-stg.api.autodesk.com/exchange";
+                var prodClientUrl = "https://developer.api.autodesk.com/exchange";
+                var ClientUrl = prodClientUrl;
+
+                var client = new RestClient(ClientUrl);
+
+                // STEP 1: CREATE A DATA EXCHANGE CONTAINER ---------------------
+                // We currently use a Revit contract with no host and no source for development purposes. 
+                // The FDX team is working on creating a contract for our use case - we will need to swap 
+                // this with the new contract before we release the data collection feature to production.
+                string exchangeBody = "{\"type\":\"autodesk.fdx:space.exchangecontainer-1.0.0\",\"components\":{\"insert\":{\"autodesk.fdx:contract.revitViewGeometry-1.0.0\":{\"contract\":{\"String\":{\"viewableId\":\"{{viewableId}}\",\"viewName\":\"{{viewableName}}\",\"viewGuid\":\"{{viewGuid}}\"}}}}}}";
+
+                RestRequest createExchangeRequest = new RestRequest("/v1/exchanges");
+                createExchangeRequest.AddStringBody(exchangeBody, ContentType.Json);
+                AddHeadersToPostRequest(createExchangeRequest, tkn);
+                var exchangeRequestResponse = client.ExecutePost(createExchangeRequest);
+
+                dynamic exchangeRequestResponseBody = JObject.Parse(exchangeRequestResponse.Content);
+                // We extract the exchange container id, the collection id and the schemaNamespace id 
+                // from the response - these will be consumed by the following API calls.
+                ExchangeContainerId = exchangeRequestResponseBody["id"].Value;
+                CollectionId = exchangeRequestResponseBody["collection"]["id"].Value;
+                var schemaNamespaceId = exchangeRequestResponseBody["components"]["data"]["insert"]["autodesk.fdx:source.base-1.0.0"]["source"]["String"]["schemaNamespaceId"].Value;
+                MessageBox.Show("TEST FDX: Step 1 successful" + Environment.NewLine+ "ExchangeContainerId:" + ExchangeContainerId + Environment.NewLine + "CollectionId:" + CollectionId);
+            }
         }
 
         private void DynamoView_Activated(object sender, EventArgs e)
