@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using Dynamo.Core;
 using Dynamo.Exceptions;
 using Dynamo.Extensions;
@@ -729,6 +730,53 @@ namespace Dynamo.PackageManager
         internal static void CleanSharedPublishLoadContext(MetadataLoadContext mlc)
         {
             mlc.Dispose();
+        }
+
+        /// <summary>
+        ///     Attempt to load a managed assembly in to Assembly Load Context. 
+        /// </summary>
+        /// <param name="rootDir">The root directory of the package</param>
+        /// <param name="filename">The filename of a DLL</param>
+        /// <param name="mlc">The MetaDataLoadContext to load the package assemblies into for inspection.</param>
+        /// <param name="assem">out Assembly - the passed value does not matter and will only be set if loading succeeds</param>
+        /// <returns>Returns Success if success, NotManagedAssembly if BadImageFormatException, AlreadyLoaded if FileLoadException</returns>
+        internal static AssemblyLoadingState TryAssemblyContextLoad(string rootDir, string filename, AssemblyLoadContext alc, out Assembly assem)
+        {
+            Assembly assemName = null;
+            assem = null;
+            try
+            {
+                var assemblyCount = alc.Assemblies.Count();
+                assemName = alc.Assemblies.FirstOrDefault(x => x.GetName().Name.ToLower().Equals(Path.GetFileNameWithoutExtension(filename).ToLower()), null);
+                assem = alc.LoadFromAssemblyPath(filename);
+
+                //if loading the assembly did not actually add a new assembly to the MLC
+                //then we've loaded it already, and our current behavior is to
+                //disable publish when a package contains the same assembly twice.
+                if (assemblyCount == alc.Assemblies.Count())
+                {
+                    throw new FileLoadException(filename);
+                }
+                return AssemblyLoadingState.Success;
+            }
+            catch (BadImageFormatException)
+            {
+                assem = null;
+                return AssemblyLoadingState.NotManagedAssembly;
+            }
+            catch (FileLoadException)
+            {
+                assem = assem == null ? assemName : assem;
+                return AssemblyLoadingState.AlreadyLoaded;
+            }
+        }
+        internal static AssemblyLoadContext assInitSharedPublishLoadContext()
+        {
+            return new AssemblyLoadContext("PackageAssemblyContext", true);
+        }
+        internal static void assCleanSharedPublishLoadContext(AssemblyLoadContext alc)
+        {
+            alc.Unload();
         }
 
         /// <summary>

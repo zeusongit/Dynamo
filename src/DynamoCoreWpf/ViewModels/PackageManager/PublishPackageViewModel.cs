@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Forms;
@@ -894,6 +895,7 @@ namespace Dynamo.PackageManager
             }
         }
         private static MetadataLoadContext sharedMetaDataLoadContext = null;
+        private static AssemblyLoadContext sharedMetaDataLoadContext2 = null;
         /// <summary>
         /// A shared MetaDataLoadContext that is used for assembly inspection during package publishing.
         /// This member is shared so the behavior is similar to the ReflectionOnlyLoadContext this is replacing.
@@ -914,6 +916,24 @@ namespace Dynamo.PackageManager
                     sharedMetaDataLoadContext = PackageLoader.InitSharedPublishLoadContext();
                 }
                 return sharedMetaDataLoadContext;
+            }
+        }
+
+        private static AssemblyLoadContext SharedPublishLoadContext2
+        {
+            get
+            {
+                try
+                {
+                    sharedMetaDataLoadContext2 = sharedMetaDataLoadContext2 == null ? PackageLoader.assInitSharedPublishLoadContext() : sharedMetaDataLoadContext2;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // This can happen if the shared context has been disposed before.
+                    // In this case, we create a new one.
+                    sharedMetaDataLoadContext2 = PackageLoader.assInitSharedPublishLoadContext();
+                }
+                return sharedMetaDataLoadContext2;
             }
         }
 
@@ -1420,7 +1440,7 @@ namespace Dynamo.PackageManager
             foreach (var file in pkg.EnumerateAssemblyFilesInPackage())
             {
                 Assembly assem;
-                var result = PackageLoader.TryMetaDataContextLoad(pkg.RootDirectory , file, SharedPublishLoadContext, out assem);
+                var result = PackageLoader.TryAssemblyContextLoad(pkg.RootDirectory , file, SharedPublishLoadContext2, out assem);
 
                 switch (result)
                 {
@@ -2356,7 +2376,7 @@ namespace Dynamo.PackageManager
                 Package.AddAssemblies(Assemblies);
                 Package.LoadState.SetAsLoaded();
                 //clean shared load context when publishing package
-                PackageLoader.CleanSharedPublishLoadContext(SharedPublishLoadContext);
+                PackageLoader.assCleanSharedPublishLoadContext(SharedPublishLoadContext2);
                 return files;
             }
             catch (Exception e)
