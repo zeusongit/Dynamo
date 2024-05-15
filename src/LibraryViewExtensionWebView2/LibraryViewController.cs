@@ -14,13 +14,13 @@ using Dynamo.Extensions;
 using Dynamo.LibraryViewExtensionWebView2.Handlers;
 using Dynamo.LibraryViewExtensionWebView2.ViewModels;
 using Dynamo.LibraryViewExtensionWebView2.Views;
-using Dynamo.Logging;
 using Dynamo.Models;
 using Dynamo.Search;
 using Dynamo.Search.SearchElements;
 using Dynamo.ViewModels;
 using Dynamo.Wpf.Interfaces;
 using Dynamo.Wpf.UI.GuidedTour;
+using Dynamo.Wpf.Utilities;
 using Dynamo.Wpf.ViewModels;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
@@ -75,7 +75,7 @@ namespace Dynamo.LibraryViewExtensionWebView2
         private FloatingLibraryTooltipPopup libraryViewTooltip;
         // private ResourceHandlerFactory resourceFactory;
         private IDisposable observer;
-        internal WebView2 browser;
+        internal DynamoWebView2 browser;
         ScriptingObject twoWayScriptingObject;
         private const string CreateNodeInstrumentationString = "Search-NodeAdded";
         // TODO remove this when we can control the library state from Dynamo more precisely.
@@ -120,6 +120,23 @@ namespace Dynamo.LibraryViewExtensionWebView2
             {
                 WebBrowserUserDataFolder = webBrowserUserDataFolder.FullName;
             }
+
+            /// Create and add the library view to the WPF visual tree.
+            /// Also load the library.html and js files.
+            LibraryViewModel model = new LibraryViewModel();
+            LibraryView view = new LibraryView(model);
+           
+            //Adding the LibraryView to the sidebar ensures that the webview2 component is visible.
+            var sidebarGrid = dynamoWindow.FindName("sidebarGrid") as Grid;
+            sidebarGrid.Children.Add(view);
+
+            browser = view.mainGrid.Children.OfType<DynamoWebView2>().FirstOrDefault();
+
+            browser.Loaded += Browser_Loaded;
+            browser.SizeChanged += Browser_SizeChanged;
+
+            LibraryViewController.SetupSearchModelEventsObserver(browser, dynamoViewModel.Model.SearchModel,
+                    this, this.customization);
         }
 
         private void DynamoViewModel_PreferencesWindowChanged(object sender, EventArgs e)
@@ -171,7 +188,6 @@ namespace Dynamo.LibraryViewExtensionWebView2
                 //Create the node of given item name
                 var cmd = new DynamoModel.CreateNodeCommand(Guid.NewGuid().ToString(), nodeName, -1, -1, true, false);
                 commandExecutive.ExecuteCommand(cmd, Guid.NewGuid().ToString(), LibraryViewExtensionWebView2.ExtensionName);
-                LogEventsToInstrumentation(CreateNodeInstrumentationString, nodeName);
 
                 this.disableObserver = false;
             }));
@@ -185,19 +201,6 @@ namespace Dynamo.LibraryViewExtensionWebView2
             dynamoWindow.Dispatcher.BeginInvoke(new Action(() =>
                 dynamoViewModel.ImportLibraryCommand.Execute(null)
             ));
-        }
-
-        /// <summary>
-        /// This function logs events to instrumentation if it matches a set of known events
-        /// </summary>
-        /// <param name="eventName">Event Name that gets logged to instrumentation</param>
-        /// <param name="data"> Data that gets logged to instrumentation </param>
-        public void LogEventsToInstrumentation(string eventName, string data)
-        {
-            if (eventName == "Search" || eventName == "Filter-Categories" || eventName == "Search-NodeAdded")
-            {
-                Analytics.LogPiiInfo(eventName, data);
-            }
         }
 
         /// <summary>
@@ -234,6 +237,7 @@ namespace Dynamo.LibraryViewExtensionWebView2
         /// <param name="text">text to be added to clipboard</param>
         internal void OnCopyToClipboard(string text)
         {
+            dynamoViewModel.Model.ClipBoard.Clear();
             Clipboard.SetText(text);
         }
 
@@ -302,31 +306,19 @@ namespace Dynamo.LibraryViewExtensionWebView2
            Tuple.Create("/resources/search-icon-clear.svg",true)
         };
 
-        /// <summary>
-        /// Creates and adds the library view to the WPF visual tree.
-        /// Also loads the library.html and js files.
-        /// </summary>
-        /// <returns>LibraryView control</returns>
-        internal void AddLibraryView()
-        {
-            LibraryViewModel model = new LibraryViewModel();
-            LibraryView view = new LibraryView(model);
-
-            var sidebarGrid = dynamoWindow.FindName("sidebarGrid") as Grid;
-            sidebarGrid.Children.Add(view);
-
-            browser = view.mainGrid.Children.OfType<WebView2>().FirstOrDefault();
-            browser.Loaded += Browser_Loaded;
-            browser.SizeChanged += Browser_SizeChanged;
-
-            this.browser = view.mainGrid.Children.OfType<WebView2>().FirstOrDefault();
-            InitializeAsync();
-
-            LibraryViewController.SetupSearchModelEventsObserver(browser, dynamoViewModel.Model.SearchModel, this, this.customization);
-        }
-
         async void InitializeAsync()
         {
+            try
+            {
+                var absolutePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                    @"runtimes\win-x64\native");
+                CoreWebView2Environment.SetLoaderDllFolderPath(absolutePath);
+            }
+            catch (InvalidOperationException e)
+            {
+                LogToDynamoConsole("WebView2Loader.dll is already loaded successfully.");
+            }
+            
             browser.CoreWebView2InitializationCompleted += Browser_CoreWebView2InitializationCompleted;
 
             if (!string.IsNullOrEmpty(WebBrowserUserDataFolder))
@@ -338,12 +330,20 @@ namespace Dynamo.LibraryViewExtensionWebView2
                 };
             }
 
-            await browser.EnsureCoreWebView2Async();
-            this.browser.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
-            twoWayScriptingObject = new ScriptingObject(this);
-            //register the interop object into the browser.
-            this.browser.CoreWebView2.AddHostObjectToScript("bridgeTwoWay", twoWayScriptingObject);
-            browser.CoreWebView2.Settings.IsZoomControlEnabled = true;
+            try
+            {
+                await browser.Initialize(LogToDynamoConsole);
+
+                this.browser.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+                twoWayScriptingObject = new ScriptingObject(this);
+                //register the interop object into the browser.
+                this.browser.CoreWebView2.AddHostObjectToScript("bridgeTwoWay", twoWayScriptingObject);
+                browser.CoreWebView2.Settings.IsZoomControlEnabled = true;
+            }
+            catch (ObjectDisposedException ex)
+            {
+                LogToDynamoConsole(ex.Message);
+            }
         }
 
         private void CoreWebView2_WebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs args)
@@ -410,6 +410,8 @@ namespace Dynamo.LibraryViewExtensionWebView2
         {
             string msg = "Browser Loaded";
             LogToDynamoConsole(msg);
+
+            InitializeAsync();
         }
 
         // This enum is for matching the modifier keys between C# and javaScript
@@ -425,6 +427,7 @@ namespace Dynamo.LibraryViewExtensionWebView2
         enum EventsTracked
         {
             Delete,
+            A,
             C,
             V
         }
@@ -708,6 +711,7 @@ namespace Dynamo.LibraryViewExtensionWebView2
         protected void Dispose(bool disposing)
         {
             if (!disposing) return;
+
             if (observer != null) observer.Dispose();
             observer = null;
             if (this.dynamoWindow != null)

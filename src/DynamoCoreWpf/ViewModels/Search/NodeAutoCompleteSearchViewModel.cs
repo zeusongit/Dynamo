@@ -77,6 +77,17 @@ namespace Dynamo.ViewModels
         }
 
         /// <summary>
+        /// If MLAutocompleteTOU is approved
+        /// </summary>
+        public bool IsMLAutocompleteTOUApproved
+        {
+            get
+            {
+                return dynamoViewModel.PreferenceSettings.IsMLAutocompleteTOUApproved;
+            }
+        }
+
+        /// <summary>
         /// If true, autocomplete method options are hidden from UI 
         /// </summary>
         public bool HideAutocompleteMethodOptions
@@ -140,6 +151,8 @@ namespace Dynamo.ViewModels
             }
         }
 
+        internal event Action<NodeModel> ParentNodeRemoved;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -147,7 +160,7 @@ namespace Dynamo.ViewModels
         internal NodeAutoCompleteSearchViewModel(DynamoViewModel dynamoViewModel) : base(dynamoViewModel)
         {
             // Off load some time consuming operation here
-            InitializeDefaultAutoCompleteCandidates();
+            DefaultResults = dynamoViewModel.DefaultAutocompleteCandidates.Values;
             ServiceVersion = string.Empty;
         }
 
@@ -157,30 +170,13 @@ namespace Dynamo.ViewModels
         internal void ResetAutoCompleteSearchViewState()
         {
             DisplayAutocompleteMLStaticPage = false;
-            DisplayLowConfidence = PreferenceSettings.Instance.HideNodesBelowSpecificConfidenceLevel;
+            DisplayLowConfidence = dynamoViewModel.PreferenceSettings.HideNodesBelowSpecificConfidenceLevel && dynamoViewModel.PreferenceSettings.DefaultNodeAutocompleteSuggestion == NodeAutocompleteSuggestion.MLRecommendation;
             AutocompleteMLMessage = string.Empty;
             AutocompleteMLTitle = string.Empty;
             FilteredResults = new List<NodeSearchElementViewModel>();
             FilteredHighConfidenceResults = new List<NodeSearchElementViewModel>();
             FilteredLowConfidenceResults = new List<NodeSearchElementViewModel>();
             searchElementsCache = new List<NodeSearchElementViewModel>();
-        }
-
-        private void InitializeDefaultAutoCompleteCandidates()
-        {
-            var candidates = new List<NodeSearchElementViewModel>();
-            // TODO: These are basic input types in Dynamo
-            // This should be only served as a temporary default case.
-            var queries = new List<string>(){"String", "Number Slider", "Integer Slider", "Number", "Boolean", "Watch", "Watch 3D", "Python Script"};
-            foreach (var query in queries)
-            {
-                var foundNode = Search(query).Where(n => n.Name.Equals(query)).FirstOrDefault();
-                if(foundNode != null)
-                {
-                    candidates.Add(foundNode);
-                }
-            }
-            DefaultResults = candidates;
         }
 
         internal MLNodeAutoCompletionRequest GenerateRequestForMLAutocomplete()
@@ -213,7 +209,7 @@ namespace Dynamo.ViewModels
             request.Port.ListAtLevel = portInfo.Level;
 
             // Set host info
-            var hostName = string.IsNullOrEmpty(dynamoViewModel.Model.HostAnalyticsInfo.HostName) ? dynamoViewModel.Model.HostName : dynamoViewModel.Model.HostAnalyticsInfo.HostName;
+            var hostName = string.IsNullOrEmpty(DynamoModel.HostAnalyticsInfo.HostName) ? dynamoViewModel.Model.HostName : DynamoModel.HostAnalyticsInfo.HostName;
             var hostNameEnum = GetHostNameEnum(hostName);
 
             if (hostNameEnum != HostNames.None)
@@ -361,7 +357,7 @@ namespace Dynamo.ViewModels
 
                         if (viewModelElement != null)
                         {
-                            viewModelElement.AutoCompletionNodeMachineLearningInfo = new AutoCompletionNodeMachineLearningInfo(true, true, result.Score * 100);
+                            viewModelElement.AutoCompletionNodeMachineLearningInfo = new AutoCompletionNodeMachineLearningInfo(true, true, Math.Round(result.Score * 100));
                             results.Add(viewModelElement);
                         }
                     }
@@ -394,7 +390,7 @@ namespace Dynamo.ViewModels
 
                         if (viewModelElement != null)
                         {
-                            viewModelElement.AutoCompletionNodeMachineLearningInfo = new AutoCompletionNodeMachineLearningInfo(true, true, result.Score * 100);
+                            viewModelElement.AutoCompletionNodeMachineLearningInfo = new AutoCompletionNodeMachineLearningInfo(true, true, Math.Round(result.Score * 100));
                             results.Add(viewModelElement);
                         }
                     }
@@ -412,7 +408,7 @@ namespace Dynamo.ViewModels
                 }
 
                 // Show low confidence section if there are some results under threshold and feature enabled
-                DisplayLowConfidence = FilteredLowConfidenceResults.Any() && PreferenceSettings.Instance.HideNodesBelowSpecificConfidenceLevel;
+                DisplayLowConfidence = FilteredLowConfidenceResults.Any() && dynamoViewModel.PreferenceSettings.HideNodesBelowSpecificConfidenceLevel;
 
                 if (!FilteredHighConfidenceResults.Any())
                 {
@@ -423,7 +419,7 @@ namespace Dynamo.ViewModels
                 }
 
                 // By default, show only the results which are above the threshold
-                FilteredResults = PreferenceSettings.Instance.HideNodesBelowSpecificConfidenceLevel? FilteredHighConfidenceResults : results    ;
+                FilteredResults = dynamoViewModel.PreferenceSettings.HideNodesBelowSpecificConfidenceLevel? FilteredHighConfidenceResults : results    ;
             }
         }
 
@@ -432,25 +428,23 @@ namespace Dynamo.ViewModels
             MLNodeAutoCompletionResponse results = null;
             var authProvider = dynamoViewModel.Model.AuthenticationManager.AuthProvider;
 
-            if (authProvider is IOAuth2AuthProvider oauth2AuthProvider)
+            if (authProvider is IOAuth2AuthProvider oauth2AuthProvider && authProvider is IOAuth2AccessTokenProvider tokenprovider)
             {
                 try
                 {
-                    // TODO: We need to implement something like GetToken() on the IOAuth2AuthProvider interface which will be used by all auth providers.
-                    // For now, we are mocking the RestSharpRequest object to set the IDSDK token and then update the header in actual RestRequest with that token.
-                    // LoginRequest() is also not available on RevitOAuth2Provider, so using the SignRequest() which will show the sign-in page when the user is logged out.
-                    RestRequest restSharpRequest = new RestRequest();
-                    RestClient restSharpClient = new RestClient();
-                    oauth2AuthProvider.SignRequest(ref restSharpRequest, restSharpClient);
-
-                    var uri = DynamoUtilities.PathHelper.getServiceBackendAddress(this, nodeAutocompleteMLEndpoint);
+                    var uri = DynamoUtilities.PathHelper.GetServiceBackendAddress(this, nodeAutocompleteMLEndpoint);
                     var client = new RestClient(uri);
-                    var request = new RestRequest(Method.POST);
-
-                    request.AddHeader("Authorization", restSharpRequest.Parameters.FirstOrDefault(n => n.Name.Equals("Authorization")).Value.ToString());
-                    request = request.AddJsonBody(requestJSON) as RestRequest;
+                    var request = new RestRequest(string.Empty,Method.Post);
+                    var tkn = tokenprovider?.GetAccessToken();
+                    if (string.IsNullOrEmpty(tkn))
+                    {
+                        throw new Exception("Authentication required.");
+                    }
+                    request.AddHeader("Authorization",$"Bearer {tkn}");
+                    request = request.AddJsonBody(requestJSON);
                     request.RequestFormat = DataFormat.Json;
-                    RestResponse response = client.Execute(request) as RestResponse;
+                    RestResponse response = client.Execute(request);
+                    //TODO maybe worth moving to system.text json in phases?
                     results = JsonConvert.DeserializeObject<MLNodeAutoCompletionResponse>(response.Content);
                 }
                 catch (Exception ex)
@@ -525,6 +519,7 @@ namespace Dynamo.ViewModels
         {
             if (PortViewModel == null) return;
 
+            dynamoViewModel.CurrentSpaceViewModel.Model.NodeRemoved += NodeViewModel_Removed;
             ResetAutoCompleteSearchViewState();
 
             if (IsDisplayingMLRecommendation)
@@ -588,6 +583,16 @@ namespace Dynamo.ViewModels
             {
                 FilteredResults = DefaultResults.Where(e => e.Name == "Watch" || e.Name == "Watch 3D" || e.Name == "Python Script").ToList();
             }
+        }
+
+        internal void OnNodeAutoCompleteWindowClosed()
+        {
+            dynamoViewModel.CurrentSpaceViewModel.Model.NodeRemoved -= NodeViewModel_Removed;
+        }
+
+        internal void NodeViewModel_Removed(NodeModel node)
+        {
+            ParentNodeRemoved?.Invoke(node);
         }
 
         /// <summary>

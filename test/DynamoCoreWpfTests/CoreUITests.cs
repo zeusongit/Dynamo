@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Threading;
 using CoreNodeModels.Input;
 using Dynamo.Configuration;
 using Dynamo.Controls;
@@ -546,31 +547,7 @@ namespace DynamoCoreWpfTests
             Assert.AreEqual(OneGroupStyle.GroupStyleItemsList[0].Name, initalSetting.GroupStyleItemsList[0].Name);
             Assert.AreEqual(OneGroupStyle.GroupStyleItemsList[0].HexColorString, initalSetting.GroupStyleItemsList[0].HexColorString);
         }
-
-        [Test]
-        [Category("DynamoUI")]
-        public void PreferenceSetting_NotAgreeAnalyticsSharing()
-        {
-            // Test deserialization of analytics setting
-            // Test loading old settings file without agreement
-            var filePath = Path.Combine(GetTestDirectory(ExecutingDirectory), @"settings\DynamoSettings-firstrun.xml");
-            var resultSetting = PreferenceSettings.Load(filePath);
-            Assert.AreEqual(false, resultSetting.IsAnalyticsReportingApproved);
-            Assert.AreEqual(false, resultSetting.IsUsageReportingApproved);
-            Assert.DoesNotThrow(() => Dynamo.Logging.AnalyticsService.ShutDown());
-        }
-
-        [Test]
-        [Category("DynamoUI")]
-        public void PreferenceSetting_AgreeAnalyticsSharing()
-        {
-            // Test loading old settings file with agreement
-            var filePath = Path.Combine(GetTestDirectory(ExecutingDirectory), @"settings\DynamoSettings-AnalyticsTurnedOn.xml");
-            var resultSetting = PreferenceSettings.Load(filePath);
-            Assert.AreEqual(false, resultSetting.IsAnalyticsReportingApproved);
-            Assert.AreEqual(false, resultSetting.IsUsageReportingApproved);
-            Assert.DoesNotThrow(() => Dynamo.Logging.AnalyticsService.ShutDown());
-        }
+        
 
         #region PreferenceSettings
         [Test, Apartment(ApartmentState.STA)]
@@ -621,17 +598,9 @@ namespace DynamoCoreWpfTests
                 // First time run, check if dynamo did set it back to false after running
                 Assert.AreEqual(false, UsageReportingManager.Instance.FirstRun);
 
-                // CollectionInfoOption To FALSE
-                UsageReportingManager.Instance.SetUsageReportingAgreement(true);
                 RestartTestSetup(startInTestMode: false);
-                // Because IsUsageReportingApproved is now dominated by IsAnalyticsReportingApproved.
-                // In this case. the value is still false because of IsAnalyticsReportingApproved
-                Assert.AreEqual(false, UsageReportingManager.Instance.IsUsageReportingApproved);
 
-                // CollectionInfoOption To FALSE
-                UsageReportingManager.Instance.SetUsageReportingAgreement(false);
                 RestartTestSetup(startInTestMode: false);
-                Assert.AreEqual(false, UsageReportingManager.Instance.IsUsageReportingApproved);
 
                 DynamoModel.IsTestMode = isTestMode; // Restore the orignal value.
             }
@@ -818,7 +787,7 @@ namespace DynamoCoreWpfTests
 
             //create the view
             View = new DynamoView(ViewModel);
-            SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
         }
 
         private void RestartTestSetupWithNewSettings(Dynamo.Models.DynamoModel.IStartConfiguration configuration, bool startInTestMode)
@@ -851,7 +820,7 @@ namespace DynamoCoreWpfTests
 
             //create the view
             View = new DynamoView(ViewModel);
-            SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
         }
 
         #endregion

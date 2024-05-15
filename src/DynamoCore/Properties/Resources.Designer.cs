@@ -993,6 +993,15 @@ namespace Dynamo.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to default input name, rename me!.
+        /// </summary>
+        public static string InputNodeRenameHint {
+            get {
+                return ResourceManager.GetString("InputNodeRenameHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to variable;argument;parameter.
         /// </summary>
         public static string InputNodeSearchTags {
@@ -1114,6 +1123,15 @@ namespace Dynamo.Properties {
         public static string InvalidStartOrEndOfRange {
             get {
                 return ResourceManager.GetString("InvalidStartOrEndOfRange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This workspace contains element binding data in a legacy format that is no longer supported in Dynamo 3.0 and higher versions. Element binding data will be saved in the new format the next time you run and save this workspace..
+        /// </summary>
+        public static string LegacyTraceDataWarning {
+            get {
+                return ResourceManager.GetString("LegacyTraceDataWarning", resourceCulture);
             }
         }
         

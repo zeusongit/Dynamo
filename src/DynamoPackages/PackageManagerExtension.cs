@@ -42,16 +42,17 @@ namespace Dynamo.PackageManager
         /// </summary>
         private Dictionary<string, List<PackageInfo>> NodePackageDictionary;
 
+        private bool noNetworkMode;
+
         public string Name { get { return "DynamoPackageManager"; } }
 
         public string UniqueId
         {
             get { return "FCABC211-D56B-4109-AF18-F434DFE48139"; }
         }
-        internal HostAnalyticsInfo HostInfo { get; private set; }
 
         // Current host, empty if sandbox, null when running tests
-        internal virtual string Host => HostInfo.HostName;
+        internal virtual string Host => DynamoModel.HostAnalyticsInfo.HostName;
 
         /// <summary>
         ///     Manages loading of packages (property meant solely for tests)
@@ -118,7 +119,7 @@ namespace Dynamo.PackageManager
         /// </summary>
         public void Startup(StartupParams startupParams)
         {
-            string url = DynamoUtilities.PathHelper.getServiceBackendAddress(this, "packageManagerAddress");
+            string url = DynamoUtilities.PathHelper.GetServiceBackendAddress(this, "packageManagerAddress");
 
             OnMessageLogged(LogMessage.Info("Dynamo will use the package manager server at : " + url));
 
@@ -159,6 +160,7 @@ namespace Dynamo.PackageManager
                 uploadBuilder, packageUploadDirectory);
 
             LoadPackages(startupParams.Preferences, startupParams.PathManager);
+            noNetworkMode = startupParams.NoNetworkMode;
         }
 
         private PackageInfo handleCustomNodeOwnerQuery(Guid customNodeFunctionID)
@@ -174,7 +176,6 @@ namespace Dynamo.PackageManager
             (sp.CurrentWorkspaceModel as WorkspaceModel).CollectingCustomNodePackageDependencies += GetCustomNodePackageFromID;
             (sp.CurrentWorkspaceModel as WorkspaceModel).CollectingNodePackageDependencies += GetNodePackageFromAssemblyName;
             currentWorkspace = (sp.CurrentWorkspaceModel as WorkspaceModel);
-            HostInfo = ReadyParams.HostInfo;
         }
 
         public void Shutdown()
@@ -339,10 +340,9 @@ namespace Dynamo.PackageManager
             var containsPackagesThatTargetOtherHosts = false;
             //fallback list of hosts as of 9/8/23
             IEnumerable<string> knownHosts =  new List<string> { "Revit", "Civil 3D", "Alias", "Advance Steel", "FormIt" };
-            //if analytics is disabled, treat this as network black out
-            //and don't ask dpm for known hosts.
-            //TODO we currently use this like a no network comms flags - work on introducing a new flag or renaming this flag.
-            if (!Dynamo.Logging.Analytics.DisableAnalytics)
+
+            //we don't ask dpm for known hosts in offline mode.
+            if (!noNetworkMode)
             {
                 // Known hosts
                 knownHosts = PackageManagerClient.GetKnownHosts();

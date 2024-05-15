@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using Dynamo.PackageManager.Interfaces;
 using Dynamo.Utilities;
-using RestSharp.Serialization.Json;
 
 namespace Dynamo.PackageManager
 {
     public interface IPackageDirectoryBuilder
     {
         IDirectoryInfo BuildDirectory(Package packages, string packagesDirectory, IEnumerable<string> files, IEnumerable<string> markdownfiles);
+        IDirectoryInfo BuildRetainDirectory(Package package, string packagesDirectory, IEnumerable<IEnumerable<string>> contentFiles, IEnumerable<string> markdownFiles);
     }
 
     /// <summary>
@@ -56,10 +57,37 @@ namespace Dynamo.PackageManager
             WritePackageHeader(package, rootDir);
             RemoveUnselectedFiles(contentFiles, rootDir);
             CopyFilesIntoPackageDirectory(contentFiles, markdownFiles, dyfDir, binDir, extraDir, docDir);
-            RemoveDyfFiles(contentFiles, dyfDir);
+            RemoveDyfFiles(contentFiles, dyfDir); 
+
             RemapCustomNodeFilePaths(contentFiles, dyfDir.FullName);
 
             return rootDir;
+        }
+
+        public IDirectoryInfo BuildRetainDirectory(Package package, string packagesDirectory, IEnumerable<IEnumerable<string>> contentFiles, IEnumerable<string> markdownFiles)
+        {
+            
+            var rootPath = Path.Combine(packagesDirectory, package.Name);
+            var rootDir = fileSystem.TryCreateDirectory(rootPath);
+            var sourcePackageDir = package.RootDirectory;
+            package.RootDirectory = rootDir.FullName;
+
+            var dyfFiles = new List<string>();
+
+            RemoveUnselectedFiles(contentFiles.SelectMany(files => files).ToList(), rootDir);
+            CopyFilesIntoRetainedPackageDirectory(contentFiles, markdownFiles, sourcePackageDir, rootDir, out dyfFiles);
+            RemoveRetainDyfFiles(contentFiles.SelectMany(files => files).ToList(), dyfFiles);  
+            
+            RemapRetainCustomNodeFilePaths(contentFiles.SelectMany(files => files).ToList(), dyfFiles);
+            WritePackageHeader(package, rootDir);
+
+            return rootDir;
+        }
+
+        public static void PreBuildDirectory(string packageName, string packagesDirectory,
+            out string rootDir, out string dyfDir, out string binDir, out string extraDir, out string docDir)
+        {
+            PreviewPackageDirectory(packagesDirectory, packageName, out rootDir, out dyfDir, out binDir, out extraDir, out docDir);
         }
 
         #endregion
@@ -71,6 +99,39 @@ namespace Dynamo.PackageManager
             foreach (var func in filePaths.Where(x => x.EndsWith(".dyf")))
             {
                 pathRemapper.SetPath(func, dyfRoot);
+            }
+        }
+
+        private void RemapRetainCustomNodeFilePaths(IEnumerable<string> filePaths, List<string> dyfFiles)
+        {
+            foreach (var func in filePaths.Where(x => x.EndsWith(".dyf")))
+            {
+                //var remapLocation = dyfFiles.First(x => Path.GetDirectoryName(x).Equals(Path.GetDirectoryName(func)));
+                var remapLocation = dyfFiles.First(x =>
+                {
+                    var p1 = Path.GetFileName(Path.GetDirectoryName(x));
+                    var f1 = Path.GetFileName(x);
+                    var r1 = Path.Combine(p1, f1);
+
+                    var p2 = Path.GetFileName(Path.GetDirectoryName(func));
+                    var f2 = Path.GetFileName(func);
+                    var r2 = Path.Combine(p2, f2);
+
+                    return r1.Equals(r2);
+                });
+                pathRemapper.SetPath(func, remapLocation);
+            }
+        }
+
+
+        private void RemoveRetainDyfFiles(IEnumerable<string> filePaths, List<string> dyfFiles)
+        {
+            var dyfsToRemove = filePaths
+                .Where(x => x.EndsWith(".dyf") && fileSystem.FileExists(x) && Path.GetDirectoryName(x) != Path.GetDirectoryName(dyfFiles.First(f => Path.GetFileName(f).Equals(Path.GetFileName(x)))));
+
+            foreach (var dyf in dyfsToRemove)
+            {
+                fileSystem.DeleteFile(dyf);
             }
         }
 
@@ -122,13 +183,25 @@ namespace Dynamo.PackageManager
             docDir = fileSystem.TryCreateDirectory(docPath);
         }
 
+
+        private static void PreviewPackageDirectory(string packageDirectory, string packageName,
+            out string root, out string dyfDir,
+            out string binDir, out string extraDir,
+            out string docDir)
+        {
+            root = Path.Combine(packageDirectory, packageName);
+            dyfDir = Path.Combine(root, CustomNodeDirectoryName);
+            binDir = Path.Combine(root, BinaryDirectoryName);
+            extraDir = Path.Combine(root, ExtraDirectoryName);
+            docDir = Path.Combine(root, DocumentationDirectoryName);
+        }
+
         private void WritePackageHeader(Package package, IDirectoryInfo rootDir)
         {
             var pkgHeader = PackageUploadBuilder.NewRequestBody(package);
 
             // build the package header json, which will be stored with the pkg
-            var jsSer = new JsonSerializer();
-            var pkgHeaderStr = jsSer.Serialize(pkgHeader);
+            var pkgHeaderStr = JsonSerializer.Serialize(pkgHeader);
 
             // write the pkg header to the root directory of the pkg
             var headerPath = Path.Combine(rootDir.FullName, PackageJsonName);
@@ -140,6 +213,71 @@ namespace Dynamo.PackageManager
             fileSystem.WriteAllText(headerPath, pkgHeaderStr);
         }
 
+        internal void CopyFilesIntoRetainedPackageDirectory(IEnumerable<IEnumerable<string>> contentFiles, IEnumerable<string> markdownFiles, string sourcePackageDir, IDirectoryInfo rootDir, out List<string> dyfFiles)
+        {
+            dyfFiles = new List<string>();
+
+            foreach (var files in contentFiles)
+            {
+                foreach (var file in files.Where(x => x != null))
+                {
+                    // If the file doesn't actually exist, don't copy it
+                    if (!fileSystem.FileExists(file))
+                    {
+                        continue;
+                    }
+
+                    var relativePath = file.Substring(sourcePackageDir.Length);
+
+                    // Ensure the relative path starts with a directory separator.
+                    if (!string.IsNullOrEmpty(relativePath) && relativePath[0] != Path.DirectorySeparatorChar)
+                    {
+                        relativePath = relativePath.TrimStart(new char[] { '/', '\\' });
+                        relativePath = Path.DirectorySeparatorChar + relativePath;
+                    }
+
+                    var destPath = Path.Combine(rootDir.FullName, relativePath.TrimStart('\\'));
+
+                    // We are already creating the pkg.json file ourselves, so skip it, also skip if we are copying the file to itself.
+                    if (destPath.Equals(Path.Combine(rootDir.FullName, "pkg.json")) || destPath.Equals(file))
+                    {
+                        continue;
+                    }
+
+                    if (fileSystem.FileExists(destPath))
+                    {
+                        fileSystem.DeleteFile(destPath);
+                    }
+
+                    if (!Directory.Exists(Path.GetDirectoryName(destPath)))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(destPath)); 
+                    }
+
+                    fileSystem.CopyFile(file, destPath);
+
+                    if (file.EndsWith(".dyf"))
+                    {
+                        dyfFiles.Add(destPath);
+                    }
+                }
+            }
+            // All files under Markdown directory do not apply to the rule above,
+            // because they may fall into extra folder instead of docs folder,
+            // currently there is on obvious way to filter them properly only based on path string.
+            var docDirPath = Path.Combine(rootDir.FullName, DocumentationDirectoryName);
+            foreach (var file in markdownFiles.Where(x => x != null))
+            {
+                var destPath = Path.Combine(docDirPath, Path.GetFileName(file));
+
+                if (fileSystem.FileExists(destPath))
+                {
+                    fileSystem.DeleteFile(destPath);
+                }
+
+                fileSystem.CopyFile(file, destPath);
+            }
+        }
 
         internal void CopyFilesIntoPackageDirectory(IEnumerable<string> files, IEnumerable<string> markdownFiles,
                                                     IDirectoryInfo dyfDir, IDirectoryInfo binDir,
@@ -244,7 +382,6 @@ namespace Dynamo.PackageManager
                        .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                        .ToUpperInvariant();
         }
-
         #endregion
 
     }

@@ -43,6 +43,7 @@ using Matrix = SharpDX.Matrix;
 using MeshBuilder = HelixToolkit.SharpDX.Core.MeshBuilder;
 using MeshGeometry3D = HelixToolkit.SharpDX.Core.MeshGeometry3D;
 using TextInfo = HelixToolkit.SharpDX.Core.TextInfo;
+using Dynamo.Configuration;
 
 
 namespace Dynamo.Wpf.ViewModels.Watch3D
@@ -168,6 +169,26 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
         private static readonly float defaultDeadAlphaScale = 0.2f;
         private const float defaultLabelOffset = 0.025f;
 
+        /// <summary>
+        /// Color4Collection to represent axes when drawn
+        /// </summary>
+        private readonly Color4Collection DefaultAxesColors = new Color4Collection
+        {
+            Color.Red, Color.Red,
+            Color.Blue, Color.Blue,
+            Color.Green, Color.Green
+        };
+
+        /// <summary>
+        /// Color4Collection to represent axes when hidden
+        /// </summary>
+        private readonly Color4Collection TransparentAxesColors = new Color4Collection
+        {
+            Color.Transparent, Color.Transparent,
+            Color.Transparent, Color.Transparent,
+            Color.Transparent, Color.Transparent
+        };
+
         internal const string DefaultGridName = "Grid";
         internal const string DefaultAxesName = "Axes";
         internal const string DefaultLightName = "DirectionalLight";
@@ -220,11 +241,7 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
             {
                 try
                 {
-
-                    if (Environment.Is64BitProcess)
-                        NativeMethods.LoadNvApi64();
-                    else
-                        NativeMethods.LoadNvApi32();
+                    NativeMethods.LoadNvApi64();
                 }
                 catch { } // will always fail since 'fake' entry point doesn't exists
             }
@@ -359,7 +376,7 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
             set
             {
                 worldAxes = value;
-                RaisePropertyChanged("Axes");
+                RaisePropertyChanged(DefaultAxesName);
             }
         }
 
@@ -442,6 +459,10 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
             }
         }
 
+        internal bool IsAxesVisible
+        {
+            get { return Axes.Colors == TransparentAxesColors ? false : true;  }
+        }
 
         /// <summary>
         /// Sets the scale of the Grid helper
@@ -1422,7 +1443,6 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
             }
 
             // Create the headlight singleton and add it to the dictionary
-
             headLight = new DirectionalLight3D
             {
                 Color = System.Windows.Media.Color.FromRgb(230, 230, 230),
@@ -1445,7 +1465,6 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
             }
 
             // Create the grid singleton and add it to the dictionary
-
             gridModel3D = new DynamoLineGeometryModel3D
             {
                 Geometry = Grid,
@@ -1465,7 +1484,6 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
             }
 
             // Create the axes singleton and add it to the dictionary
-
             var axesModel3D = new DynamoLineGeometryModel3D
             {
                 Geometry = Axes,
@@ -1512,33 +1530,26 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
             Axes = new LineGeometry3D();
             var axesPositions = new Vector3Collection();
             var axesIndices = new IntCollection();
-            var axesColors = new Color4Collection();
 
             // Draw the coordinate axes
             axesPositions.Add(new Vector3());
             axesIndices.Add(axesPositions.Count - 1);
             axesPositions.Add(new Vector3(50 * scale, 0, 0));
             axesIndices.Add(axesPositions.Count - 1);
-            axesColors.Add(Color.Red);
-            axesColors.Add(Color.Red);
 
             axesPositions.Add(new Vector3());
             axesIndices.Add(axesPositions.Count - 1);
             axesPositions.Add(new Vector3(0, 5 * scale, 0));
             axesIndices.Add(axesPositions.Count - 1);
-            axesColors.Add(Color.Blue);
-            axesColors.Add(Color.Blue);
 
             axesPositions.Add(new Vector3());
             axesIndices.Add(axesPositions.Count - 1);
             axesPositions.Add(new Vector3(0, 0, -50 * scale));
             axesIndices.Add(axesPositions.Count - 1);
-            axesColors.Add(Color.Green);
-            axesColors.Add(Color.Green);
 
             Axes.Positions = axesPositions;
             Axes.Indices = axesIndices;
-            Axes.Colors = axesColors;
+            Axes.Colors = DefaultAxesColors;            
         }
 
         private void SetGridVisibility()
@@ -1546,8 +1557,11 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
             var visibility = isGridVisible ? Visibility.Visible : Visibility.Hidden;
             //return if there is nothing to change
             if (gridModel3D.Visibility == visibility) return;
-            
+
+            // set axes colors and grid visibility based on grid visibility
+            Axes.Colors = isGridVisible ? DefaultAxesColors : TransparentAxesColors;
             gridModel3D.Visibility = visibility;
+
             OnRequestViewRefresh();
         }
 
@@ -1882,8 +1896,7 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
                         //for each instancable item and add instance transforms.
                         //If we have any line geometry that was not associated with an instance,
                         //remove the previously added line data from the render package so the remaining lines can be added to the scene.
-                        if (rp.LineVertexRangesAssociatedWithInstancing.Any() 
-                            && DynamoModel.FeatureFlags?.CheckFeatureFlag<bool>("graphics-primitive-instancing", false) == true)
+                        if (rp.LineVertexRangesAssociatedWithInstancing.Any())
                         {
                             //For each range of line vertices add the line data and instances to the scene
                             var j = 0;
@@ -1975,8 +1988,7 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
                     //for each instancable item and add instance transforms.  
                     //If we have any mesh geometry that was not associated with an instance, remove the previously added
                     //mesh data from the render package so the remaining mesh can be added to the scene.
-                    if (rp.MeshVertexRangesAssociatedWithInstancing.Any() 
-                        && DynamoModel.FeatureFlags?.CheckFeatureFlag<bool>("graphics-primitive-instancing", false) == true)
+                    if (rp.MeshVertexRangesAssociatedWithInstancing.Any())
                     {
                         //For each range of mesh vertices add the mesh data and instances to the scene
                         var j = 0;
@@ -3010,27 +3022,25 @@ namespace Dynamo.Wpf.ViewModels.Watch3D
         /// <returns>A <see cref="BoundingBox"/> object encapsulating the geometry.</returns>
         internal static BoundingBox Bounds(this GeometryModel3D geom, float defaultBoundsSize = 5.0f)
         {
-            if (geom.Geometry.Positions == null || geom.Geometry.Positions.Count == 0)
+            var bounds = geom.Bounds;
+
+            //if the actual bounds diagonal are smaller than the default bounds diagonal then return
+            //a new default bounds centered on the actual bounds center.
+            if(bounds.Size.LengthSquared() < defaultBoundsSize * defaultBoundsSize * 3)
             {
-                return new BoundingBox();
+                var pos = bounds.Center();
+                var min = pos + new Vector3(-defaultBoundsSize, -defaultBoundsSize, -defaultBoundsSize);
+                var max = pos + new Vector3(defaultBoundsSize, defaultBoundsSize, defaultBoundsSize);
+                return new BoundingBox(min, max);
             }
 
-            if (geom.Geometry.Positions.Count > 1)
-            {
-                return BoundingBox.FromPoints(geom.Geometry.Positions.ToArray());
-            }
-
-            var pos = geom.Geometry.Positions.First();
-            var min = pos + new Vector3(-defaultBoundsSize, -defaultBoundsSize, -defaultBoundsSize);
-            var max = pos + new Vector3(defaultBoundsSize, defaultBoundsSize, defaultBoundsSize);
-            return new BoundingBox(min, max);
+            return bounds;
         }
 
         public static Vector3 Center(this BoundingBox bounds)
         {
             return (bounds.Maximum + bounds.Minimum)/2;
         }
-
     }
 
     internal static class Vector3Extensions
