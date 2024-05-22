@@ -107,8 +107,8 @@ namespace DynamoCoreWpfTests
             // Assert - default node values
             Assert.AreEqual(node.SelectedString, supportedDynamoTypesList.First().Name);
             Assert.AreEqual(node.DisplayValue, CoreNodeModels.Properties.Resources.DefineDataDisplayValueMessage);
-            Assert.AreEqual(node.PlayerValue, string.Empty);
-            Assert.IsFalse(node.IsAutoMode);
+            Assert.AreEqual(node.Value, string.Empty);
+            Assert.IsTrue(node.IsAutoMode); // default value of automode is now true
             Assert.IsFalse(node.IsList);
         }
     }
