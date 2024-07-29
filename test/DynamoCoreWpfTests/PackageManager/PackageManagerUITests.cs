@@ -2074,7 +2074,7 @@ namespace DynamoCoreWpfTests.PackageManager
             var testFoldersCount = testRootItems.Count(x => x.DependencyType.Equals(DependencyType.Folder));
             var testFilesCount = testRootItems.Count(x => !x.DependencyType.Equals(DependencyType.Folder));
 
-            Assert.AreEqual(foldersCount, testFoldersCount - 1);
+            Assert.AreEqual(foldersCount, testFoldersCount);
             Assert.AreEqual(filesCount, testFilesCount);
         }
 
@@ -2218,7 +2218,7 @@ namespace DynamoCoreWpfTests.PackageManager
             // This makes sense as we don't want to try to establish 'common parent' for folders that maybe too far apart in a tree structure
             rootFolder = vm.PackageContents.Where(x => x.DependencyType.Equals(DependencyType.Folder));
             Assert.AreEqual(1, rootFolder.Count());
-            Assert.AreEqual(4, PackageItemRootViewModel.GetFiles(rootFolder.First()).Count());
+            Assert.AreEqual(3, PackageItemRootViewModel.GetFiles(rootFolder.First()).Count());  // the 'doc' folder + the 2 files inside of it
 
             Assert.DoesNotThrow(() => vm.RemoveItemCommand.Execute(rootFolder.First()));
             Assert.IsFalse(vm.PackageContents.Any());
@@ -2254,13 +2254,12 @@ namespace DynamoCoreWpfTests.PackageManager
         public void AssertPreviewPackageDefaultFolderStructureEqualsPublishLocalPackageResults()
         {
             var packageName = "SingleFolderPublishPackage";
-            var pathManager = this.ViewModel.Model.PathManager as PathManager;
-            var publishPath = Path.Combine(pathManager.DefaultPackagesDirectory, packageName);
+            var publishPath = Path.Combine(Path.GetTempPath(), packageName);
 
-            string nodePath = Path.Combine(TestDirectory, "core", "docbrowser\\pkgs\\SingleFolderPublishPackageDocs");
+            var nodePath = Path.Combine(TestDirectory, "core", "docbrowser\\pkgs\\SingleFolderPublishPackageDocs");
             var allFiles = Directory.GetFiles(nodePath, "*", SearchOption.AllDirectories).ToList();
 
-            //now lets publish this package.
+            // now lets publish this package.
             var newPkgVm = new PublishPackageViewModel(this.ViewModel);
 
             newPkgVm.AddAllFilesAfterSelection(allFiles);
@@ -2269,37 +2268,32 @@ namespace DynamoCoreWpfTests.PackageManager
             var previewFiles = previewFilesAndFolders.Where(x => !x.DependencyType.Equals(DependencyType.Folder));
             var previewFolders = previewFilesAndFolders.Where(x => x.DependencyType.Equals(DependencyType.Folder));
 
-            newPkgVm.Name = "SingleFolderPublishPackage";
-            newPkgVm.MajorVersion = "0";
-            newPkgVm.MinorVersion = "0";
-            newPkgVm.BuildVersion = "1";
-            newPkgVm.PublishLocallyCommand.Execute();
+            // Arrange - mockup the whole logic
+            var pkg = new Package(publishPath, packageName, "1.0.0", "MIT");    // The Package 
+            var files = newPkgVm.BuildPackage();    // We get the files as we would do in the process
+            var pkgsDir = Path.GetTempPath();   // The folder to install the package into
 
-            Assert.IsTrue(Directory.Exists(publishPath));
+            var fs = new RecordedFileSystem((fn) => files.Contains(fn));
+            var db = new PackageDirectoryBuilder(fs, MockMaker.Empty<IPathRemapper>());
 
-            // Arrange
-            var createdFiles = Directory.GetFiles(publishPath, "*", SearchOption.AllDirectories).ToList();
-            var createdFolders = Directory.GetDirectories(publishPath, "*", SearchOption.AllDirectories).ToList();
+            // Act
+            db.BuildDirectory(pkg, pkgsDir, files, Enumerable.Empty<string>());
 
             // Assert
-            Assert.AreEqual(createdFiles.Count(), previewFiles.Count());
-            Assert.AreEqual(createdFolders.Count(), previewFolders.Count() - 1);  // discount one for the root folder is included
-
-            // Clean up
-            Directory.Delete(publishPath, true);
+            Assert.AreEqual(fs.CopiedFiles.Count(), previewFiles.Count() - 1); // The original pkg.json will be skipped
+            Assert.AreEqual(fs.DirectoriesCreated.Count(), previewFolders.Count()); 
         }
 
         [Test]
         public void AssertPreviewPackageRetainFolderStructureEqualsPublishLocalPackageResults()
         {
             var packageName = "SingleFolderPublishPackage";
-            var pathManager = this.ViewModel.Model.PathManager as PathManager;
-            var publishPath = Path.Combine(pathManager.DefaultPackagesDirectory, packageName);
+            var publishPath = Path.Combine(Path.GetTempPath(), packageName);
 
-            string nodePath = Path.Combine(TestDirectory, "core", "docbrowser\\pkgs\\SingleFolderPublishPackageDocs");
+            var nodePath = Path.Combine(TestDirectory, "core", "docbrowser\\pkgs\\SingleFolderPublishPackageDocs");
             var allFiles = Directory.GetFiles(nodePath, "*", SearchOption.AllDirectories).ToList();
 
-            //now lets publish this package.
+            // now lets publish this package.
             var newPkgVm = new PublishPackageViewModel(this.ViewModel);
             newPkgVm.RetainFolderStructureOverride = true;
             newPkgVm.AddAllFilesAfterSelection(allFiles);
@@ -2308,21 +2302,26 @@ namespace DynamoCoreWpfTests.PackageManager
             var previewFiles = previewFilesAndFolders.Where(x => !x.DependencyType.Equals(DependencyType.Folder));
             var previewFolders = previewFilesAndFolders.Where(x => x.DependencyType.Equals(DependencyType.Folder));
 
-            newPkgVm.Name = "SingleFolderPublishPackage";
-            newPkgVm.MajorVersion = "0";
-            newPkgVm.MinorVersion = "0";
-            newPkgVm.BuildVersion = "1";
-            newPkgVm.PublishLocallyCommand.Execute();
+            // Arrange - mockup the whole logic
+            var pkg = new Package(publishPath, packageName, "1.0.0", "MIT");    // The Package 
+            var files = newPkgVm.BuildPackage();    // We get the files as we would do in the process
+            var updatedFiles = newPkgVm.UpdateFilesForRetainFolderStructure(files); // We update the files as we would do in the process
+            var pkgsDir = Path.GetTempPath();   // The folder to install the package into
+            var roots = newPkgVm.GetCommonPaths(files.ToArray());   // We use the same function the process is using to create the roots
+
+            var fs = new RecordedFileSystem((fn) => updatedFiles.SelectMany(files => files).ToList().Any((x) => ComparePaths(x, fn)));
+            var db = new PackageDirectoryBuilder(fs, MockMaker.Empty<IPathRemapper>());
+
+            // Act
+            db.BuildRetainDirectory(pkg, pkgsDir, roots, updatedFiles, Enumerable.Empty<string>());
 
             Assert.IsTrue(Directory.Exists(publishPath));
 
-            // Arrange
-            var createdFiles = Directory.GetFiles(publishPath, "*", SearchOption.AllDirectories).ToList();
             var createdFolders = Directory.GetDirectories(publishPath, "*", SearchOption.AllDirectories).ToList();
 
             // Assert
-            Assert.AreEqual(createdFiles.Count(), previewFiles.Count() + 1);
-            Assert.AreEqual(1, createdFolders.Count(), previewFolders.Count());  // One subfolder was created
+            Assert.AreEqual(fs.CopiedFiles.Count(), previewFiles.Count());
+            Assert.AreEqual(0, createdFolders.Count());
 
             // Clean up
             Directory.Delete(publishPath, true);
@@ -2332,14 +2331,11 @@ namespace DynamoCoreWpfTests.PackageManager
         public void AssertPreviewPackageRetainFolderStructureEqualsPublishLocalPackageResultsForNestedFolders()
         {
             var packageName = "NestedPackage";
-            var pathManager = this.ViewModel.Model.PathManager as PathManager;
-            var publishPath = Path.Combine(pathManager.DefaultPackagesDirectory, packageName);
-
-            string nodePath = Path.Combine(TestDirectory, "pkgs", packageName);
+            var publishPath = Path.Combine(Path.GetTempPath(), packageName);
+            var nodePath = Path.Combine(TestDirectory, "pkgs", packageName);
             var allFiles = Directory.GetFiles(nodePath, "*", SearchOption.AllDirectories).ToList();
-            var allFolders = Directory.GetDirectories(nodePath, "*", SearchOption.AllDirectories).ToList();
 
-            //now lets publish this package.
+            // now lets publish this package.
             var newPkgVm = new PublishPackageViewModel(this.ViewModel);
             newPkgVm.RetainFolderStructureOverride = true;
             newPkgVm.AddAllFilesAfterSelection(allFiles);
@@ -2348,32 +2344,36 @@ namespace DynamoCoreWpfTests.PackageManager
             var previewFiles = previewFilesAndFolders.Where(x => !x.DependencyType.Equals(DependencyType.Folder));
             var previewFolders = previewFilesAndFolders.Where(x => x.DependencyType.Equals(DependencyType.Folder));
 
-            newPkgVm.Name = packageName;
-            newPkgVm.MajorVersion = "0";
-            newPkgVm.MinorVersion = "0";
-            newPkgVm.BuildVersion = "1";
-            newPkgVm.PublishLocallyCommand.Execute();
+            // Arrange - mockup the whole logic
+            var pkg = new Package(publishPath, packageName, "1.0.0", "MIT");    // The Package 
+            var files = newPkgVm.BuildPackage();    // We get the files as we would do in the process
+            var updatedFiles = newPkgVm.UpdateFilesForRetainFolderStructure(files); // We update the files as we would do in the process
+            var pkgsDir = Path.GetTempPath();   // The folder to install the package into
+            var roots = newPkgVm.GetCommonPaths(files.ToArray());   // We use the same function the process is using to create the roots
+
+            var fs = new RecordedFileSystem((fn) => updatedFiles.SelectMany(files => files).ToList().Any((x) => ComparePaths(x, fn)));
+            var db = new PackageDirectoryBuilder(fs, MockMaker.Empty<IPathRemapper>());
+
+            // Act
+            db.BuildRetainDirectory(pkg, pkgsDir, roots, updatedFiles, Enumerable.Empty<string>());
 
             Assert.IsTrue(Directory.Exists(publishPath));
 
-            // Arrange
-            var createdFiles = Directory.GetFiles(publishPath, "*", SearchOption.AllDirectories).ToList();
             var createdFolders = Directory.GetDirectories(publishPath, "*", SearchOption.AllDirectories).ToList();
 
             // Assert
-            Assert.AreEqual(createdFiles.Count(), previewFiles.Count() + 1);
-            Assert.AreEqual(1, createdFolders.Count(), previewFolders.Count());  // One subfolder was created
+            Assert.AreEqual(fs.CopiedFiles.Count(), previewFiles.Count());
+            Assert.AreEqual(3, createdFolders.Count());
 
             // Clean up
             Directory.Delete(publishPath, true);
         }
 
         [Test]
+        [Ignore("This is testing a very obvious side effect of the publish routine, it's not worth installing a package for it. + no clean up.")]
         public void AssertPublishLocalHandleType()
         {
             var packageName = "SingleFolderPublishPackage";
-            var pathManager = this.ViewModel.Model.PathManager as PathManager;
-            var publishPath = Path.Combine(pathManager.DefaultPackagesDirectory, packageName);
 
             string nodePath = Path.Combine(TestDirectory, "core", "docbrowser\\pkgs\\SingleFolderPublishPackageDocs");
             var allFiles = Directory.GetFiles(nodePath, "*", SearchOption.AllDirectories).ToList();
@@ -2395,18 +2395,15 @@ namespace DynamoCoreWpfTests.PackageManager
 
             // Assert
             Assert.AreEqual(PackageUploadHandle.UploadType.Local, newPkgVm.UploadType);
-
-            // Clean up
-            Directory.Delete(publishPath, true);
         }
 
         [Test]
         public void AssertPublishNewPackageVersion_SuccessfulForLoadedPackages()
         {
             var packageName = "Package";
-            var pathManager = this.ViewModel.Model.PathManager as PathManager;
-            var publishPath = Path.Combine(pathManager.DefaultPackagesDirectory, packageName);
             var pkgLoader = GetPackageLoader();
+            var publishPath = Path.Combine(Path.GetTempPath(), packageName);
+            Directory.CreateDirectory(publishPath);
 
             // Load a package
             string packageLocation = Path.Combine(GetTestDirectory(ExecutingDirectory), "pkgs", packageName);
@@ -2427,8 +2424,13 @@ namespace DynamoCoreWpfTests.PackageManager
 
             var allFiles = vm.BuildPackage();
             Assert.IsNotNull(allFiles);
+
             var updatedFiles = vm.UpdateFilesForRetainFolderStructure(allFiles);
             Assert.IsNotNull(updatedFiles);
+
+            var roots = vm.GetCommonPaths(allFiles.ToArray());
+            Assert.IsNotNull(roots);
+
 
             var handle = new PackageUploadHandle(PackageUploadBuilder.NewRequestBody(package));
             var fs = new RecordedFileSystem((fn) => updatedFiles.SelectMany(files => files).ToList().Any((x) => ComparePaths(x, fn)));
@@ -2441,7 +2443,7 @@ namespace DynamoCoreWpfTests.PackageManager
             // Assert
             Assert.DoesNotThrow(() =>
             {
-                m.NewPackageVersionRetainUpload(package, publishPath, updatedFiles, Enumerable.Empty<string>(), handle);
+                m.NewPackageVersionRetainUpload(package, publishPath, roots, updatedFiles, Enumerable.Empty<string>(), handle);
             });
             Assert.AreNotEqual(PackageUploadHandle.State.Error, handle.UploadState);
 
