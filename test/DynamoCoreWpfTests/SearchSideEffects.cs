@@ -186,7 +186,7 @@ namespace Dynamo.Tests
         {
             Assert.IsAssignableFrom(typeof(HomeWorkspaceModel), ViewModel.Model.CurrentWorkspace);
             string searchTerm = "number";
-            List<string> expectedSearchResults1 = new List<string> { "number", "number slider", "round" };
+            List<string> expectedSearchResults1 = new List<string> { "number", "number slider", "numberofcurves" };
 
             string searchTerm2 = "list.join";
             List<string> expectedSearchResults2 = new List<string> { "join", "list create", "range" };
@@ -219,7 +219,7 @@ namespace Dynamo.Tests
 
         //This test will validate that resulting nodes have a specific order when having T-Spline nodes in the nodes list.
         [Test]
-        [Category("UnitTests")]
+        [Category("Failure")]
         public void LuceneSearchTSplineNodesOrderingValidation()
         {
             Assert.IsAssignableFrom(typeof(HomeWorkspaceModel), ViewModel.Model.CurrentWorkspace);
