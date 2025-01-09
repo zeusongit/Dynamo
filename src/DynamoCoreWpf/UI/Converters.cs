@@ -613,6 +613,24 @@ namespace Dynamo.Controls
         }
     }
 
+    /// <summary>
+    /// A custom converter to 'pin' the location of the Home button in place when the slider goes under a certain value
+    /// Do not use for other purposes, and please, do not change
+    /// </summary>
+    public class LeftMarginConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            double offset = (double)value;
+            return new System.Windows.Thickness(offset * 1, 0, offset * -1, 0);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            return null;
+        }
+    }
+
     public class PathToFileNameConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -4052,6 +4070,57 @@ namespace Dynamo.Controls
             }
 
             return value;
+        }
+    }
+
+    /// <summary>
+    /// Evaluates whether the contrast ratio of a background color against a predefined dark color is sufficient (>= 4.5).
+    /// Returns true if the contrast is below the threshold, otherwise false.
+    /// </summary>
+    public class BackgroundConditionEvaluator : IValueConverter
+    {
+        private const double ContrastRatioThreshold = 4.5;
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var darkColor = (System.Windows.Media.Color)SharedDictionaryManager.DynamoColorsAndBrushesDictionary["DarkerGrey"];
+
+            var backgroundColor = (System.Windows.Media.Color)value;
+
+            var contrastRatio = GetContrastRatio(darkColor, backgroundColor);
+
+            var c1 = contrastRatio;
+            var c2 = ContrastRatioThreshold;
+            var result = contrastRatio < ContrastRatioThreshold;
+
+            return contrastRatio < ContrastRatioThreshold;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter,
+          CultureInfo culture)
+        {
+            return null;
+        }
+        private double GetContrastRatio(System.Windows.Media.Color foreground, System.Windows.Media.Color background)
+        {
+            double L1 = GetRelativeLuminance(foreground);
+            double L2 = GetRelativeLuminance(background);
+
+            return L1 > L2 ? (L1 + 0.05) / (L2 + 0.05) : (L2 + 0.05) / (L1 + 0.05);
+        }
+
+        private double GetRelativeLuminance(System.Windows.Media.Color color)
+        {
+            var R = color.R / 255.0;
+            var G = color.G / 255.0;
+            var B = color.B / 255.0;
+
+            // Apply luminance formula
+            R = R < 0.03928 ? R / 12.92 : Math.Pow((R + 0.055) / 1.055, 2.4);
+            G = G < 0.03928 ? G / 12.92 : Math.Pow((G + 0.055) / 1.055, 2.4);
+            B = B < 0.03928 ? B / 12.92 : Math.Pow((B + 0.055) / 1.055, 2.4);
+
+            return 0.2126 * R + 0.7152 * G + 0.0722 * B;
         }
     }
 }

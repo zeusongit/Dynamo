@@ -242,6 +242,11 @@ namespace Dynamo.Models
         internal bool NoNetworkMode { get; }
 
         /// <summary>
+        /// Locale forced by cli arguments
+        /// </summary>
+        internal string CLILocale { get; set; }
+
+        /// <summary>
         ///     The path manager that configures path information required for
         ///     Dynamo to function properly. See IPathManager interface for more
         ///     details.
@@ -589,6 +594,7 @@ namespace Dynamo.Models
             /// CLIMode indicates if we are running in DynamoCLI or DynamoWPFCLI mode.
             /// </summary>
             public bool CLIMode { get; set; }
+            public string CLILocale { get; set; }
         }
 
         /// <summary>
@@ -635,6 +641,7 @@ namespace Dynamo.Models
                 DefaultPythonEngine = defaultStartConfig.DefaultPythonEngine;
                 CLIMode = defaultStartConfig.CLIMode;
                 IsServiceMode = defaultStartConfig.IsServiceMode;
+                CLILocale = defaultStartConfig.CLILocale;
             }
 
             if (config is IStartConfigCrashReporter cerConfig)
@@ -685,7 +692,7 @@ namespace Dynamo.Models
 
             if (PreferenceSettings != null)
             {
-                SetUICulture(PreferenceSettings.Locale);
+                SetUICulture(CLILocale ?? PreferenceSettings.Locale);
                 PreferenceSettings.PropertyChanged += PreferenceSettings_PropertyChanged;
                 PreferenceSettings.MessageLogged += LogMessage;
             }
@@ -1788,6 +1795,22 @@ namespace Dynamo.Models
             {
                 PreferenceSettings.TemplateFilePath = pathManager.DefaultTemplatesDirectory;
             }
+            var supportedLocales = Configurations.SupportedLocaleDic.Values.ToList<string>();
+
+            //Get the last part of the template path e.f. if the path is C:\ProgramData\Dynamo\Dynamo Core\templates\en-US then currentPathLocale = en-US
+            var pathParts = PreferenceSettings.TemplateFilePath.Split("\\");
+            var currentPathLocale = pathParts.Last();
+
+            //Check if the locale is found inside the supported locales 
+            if (supportedLocales.Contains(currentPathLocale))
+            {
+                //If the CurrentUICulture is different than the locale in the TemplateFilePath then needs to be updated         
+                if (CultureInfo.CurrentUICulture.Name != currentPathLocale)
+                {
+                    PreferenceSettings.TemplateFilePath= PreferenceSettings.TemplateFilePath.Replace(currentPathLocale, CultureInfo.CurrentUICulture.Name);
+                }
+            }
+
 
             UpdatePreferenceItemLocation(PreferenceItem.Backup, PreferenceSettings.BackupLocation);
             UpdatePreferenceItemLocation(PreferenceItem.Templates, PreferenceSettings.TemplateFilePath);
