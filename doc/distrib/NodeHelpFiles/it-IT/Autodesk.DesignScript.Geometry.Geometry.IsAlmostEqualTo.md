@@ -1,7 +1,8 @@
 ## In profondità
-IsQuasiEqualTo restituirà un valore booleano basato sul fatto che un vettore abbia o meno gli stessi valori di un altro. Nell'esempio seguente, viene restituito un valore true quando si confronta un vettore sull'asse Z del sistema WCS con un vettore con coordinate (0,0,1). La regolazione del dispositivo di scorrimento di Vector Direction modificherà i valori delle coordinate del vettore rendendoli disuguali. I vettori sono rappresentati come linee.
+`Geometry.IsAlmostEqualTo` restituisce un valore booleano che indica se le due geometrie specificate hanno le stesse rappresentazioni geometriche o gli stessi valori numerici.
+
+Nell'esempio seguente, un cilindro viene creato in due modi. I due cilindri vengono poi confrontati con `Geometry.IsAlmostEqualTo`.
 ___
 ## File di esempio
 
-![IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)
-
+![Geometry.IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)

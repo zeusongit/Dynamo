@@ -1,7 +1,8 @@
 ## 詳細
-IsAlmostEqualTo は、Vector の値が他のベクトルと同じかどうかに基づいてブール値を返します。次の例では、ワールド座標系の Z 軸上の Vector と座標(0,0,1)を持つ Vector を比較して、true 値が返されています。Vector Direction スライダを調整すると、Vector の座標値が変更され、同じではなくなります。Vector は Line として表現されています。
+`Geometry.IsAlmostEqualTo` は、指定された 2 つのジオメトリが同じジオメトリ表記または数値であるかどうかを示すブール値を返します。
+
+次の例では、円柱が 2 つの方法で作成されます。次に、2 つの円柱が `Geometry.IsAlmostEqualTo` を使用して比較されます。
 ___
 ## サンプル ファイル
 
-![IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)
-
+![Geometry.IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)

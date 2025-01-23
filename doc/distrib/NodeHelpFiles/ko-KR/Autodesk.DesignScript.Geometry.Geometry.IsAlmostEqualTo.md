@@ -1,7 +1,8 @@
 ## 상세
-IsAlmostEqualTo는 벡터가 다른 벡터와 동일한 값을 가지고 있는지 여부를 기반으로 부울 값을 반환합니다. 아래 예에서는 WCS Z축의 벡터를 좌표가 (0,0,1)인 벡터와 비교할 때 true 값이 반환됩니다. 벡터 방향 슬라이더를 조정하면 벡터의 좌표 값이 변경되어 동일하지 않게 됩니다. 벡터는 선으로 표현됩니다.
+`Geometry.IsAlmostEqualTo`는 두 개의 지정된 형상이 동일한 기하학적 표현 또는 수치 값을 가지는지 여부를 나타내는 부울 값을 반환합니다.
+
+아래 예제에서는 원통이 두 가지 방식으로 작성됩니다. 그런 다음 두 원통이 `Geometry.IsAlmostEqualTo`를 사용하여 비교됩니다.
 ___
 ## 예제 파일
 
-![IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)
-
+![Geometry.IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)

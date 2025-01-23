@@ -1,7 +1,8 @@
 ## Im Detail
-IsAlmostEqualTo gibt einen booleschen Wert zurück, der davon abhängt, ob ein Vektor dieselben Werte wie ein anderer Vektor aufweist. Im folgenden Beispiel wird ein True-Wert zurückgegeben, wenn ein Vektor auf der Z-Achse des WKS mit einem Vektor mit den Koordinaten (0,0,1) verglichen wird. Durch Anpassen des Schiebereglers für die Vektorrichtung werden die Koordinatenwerte des Vektors geändert, sodass sie nicht mehr übereinstimmen. Die Vektoren werden als Linien dargestellt.
+`Geometry.IsAlmostEqualTo` gibt einen booleschen Wert zurück, der angibt, ob die zwei angegebenen Geometrien über dieselben geometrischen Darstellungen oder numerischen Werte verfügen.
+
+Im Beispiel unten wird ein Zylinder auf zwei Arten erstellt. Dann werden die beiden Zylinder mit `Geometry.IsAlmostEqualTo` verglichen.
 ___
 ## Beispieldatei
 
-![IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)
-
+![Geometry.IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)

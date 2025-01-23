@@ -1,7 +1,8 @@
 ## 深入資訊
-IsAlmostEqualTo 會根據一個向量與另一個向量是否有相同的值來傳回布林值。在以下範例中，比較 WCS Z 軸上的向量與座標為 (0,0,1) 的向量時，會傳回 true 值。調整 Vector Direction 滑棒會變更向量的座標值而導致不相等。向量以直線表示。
+`Geometry.IsAlmostEqualTo` 會傳回布林值，指出兩個給定的幾何圖形是否有相同的幾何表現法或數值。
+
+以下範例以兩種方式各建立一個圓柱，然後使用 `Geometry.IsAlmostEqualTo` 比較兩個圓柱。
 ___
 ## 範例檔案
 
-![IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)
-
+![Geometry.IsAlmostEqualTo](./Autodesk.DesignScript.Geometry.Geometry.IsAlmostEqualTo_img.jpg)
