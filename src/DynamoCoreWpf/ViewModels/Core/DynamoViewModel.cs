@@ -200,7 +200,6 @@ namespace Dynamo.ViewModels
             get { return Workspaces.FirstOrDefault(w => w.Model is HomeWorkspaceModel); }
         }
 
-
         public EngineController EngineController { get { return Model.EngineController; } }
 
         public WorkspaceModel CurrentSpace
@@ -216,6 +215,17 @@ namespace Dynamo.ViewModels
             get
             {
                 return DynamoModel.FeatureFlags?.CheckFeatureFlag("IsDNADataIngestionPipelineinBeta", true) ?? true;
+            }
+        }
+
+        /// <summary>
+        /// Controls if the cluster node autocomplete placement feature is enabled from feature flag
+        /// </summary>
+        internal bool IsDNAClusterPlacementEnabled
+        {
+            get
+            {
+                return DynamoModel.FeatureFlags?.CheckFeatureFlag("IsDNAClusterPlacementEnabled", false) ?? true;
             }
         }
 
@@ -363,6 +373,23 @@ namespace Dynamo.ViewModels
                 model.PreferenceSettings.ConsoleHeight = value;
 
                 RaisePropertyChanged("ConsoleHeight");
+            }
+        }
+
+        private double minLeftMarignOffset;
+        /// <summary>
+        /// The 
+        /// </summary>
+        public double MinLeftMarginOffset
+        {
+            get => minLeftMarignOffset;
+            set
+            {
+                if(minLeftMarignOffset != value)
+                {
+                    minLeftMarignOffset = value;
+                    RaisePropertyChanged(nameof(MinLeftMarginOffset));
+                }
             }
         }
 
@@ -1237,7 +1264,7 @@ namespace Dynamo.ViewModels
         /// <param name="bodyContent">Crash details body. If null, nothing will be filled-in.</param>
         public static void ReportABug(object bodyContent)
         {
-            var urlWithParameters = Wpf.Utilities.CrashUtilities.GithubNewIssueUrlFromCrashContent(bodyContent);
+            var urlWithParameters = Wpf.Utilities.CrashUtilities.GithubNewIssueUrlFromCrashContent(bodyContent, CrashUtilities.ReportType.Bug);
 
             // launching the process using explorer.exe will format the URL incorrectly
             // and Github will not recognise the query parameters in the URL
