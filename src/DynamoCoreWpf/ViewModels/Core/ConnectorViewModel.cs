@@ -1451,17 +1451,26 @@ namespace Dynamo.ViewModels
         /// </summary>
         public void Redraw()
         {
-            if (this.ConnectorModel?.End != null && ConnectorPinViewCollection?.Count > 0)
+            try
             {
-                RedrawBezierManyPoints();
-            }
-            else if (this.ConnectorModel?.End != null)
-            {
-                this.Redraw(this.ConnectorModel.End.Center);
-            }
+                if (this.ConnectorModel?.End != null && ConnectorPinViewCollection?.Count > 0)
+                {
+                    RedrawBezierManyPoints();
+                }
+                else if (this.ConnectorModel?.End != null)
+                {
+                    this.Redraw(this.ConnectorModel.End.Center);
+                }
 
-            this.SetCollapsedByNodeViewModel();
-            RaisePropertyChanged(nameof(ZIndex));
+                this.SetCollapsedByNodeViewModel();
+                RaisePropertyChanged(nameof(ZIndex));
+            }
+            catch (Exception ex)
+            {
+                //This is a catch all for any exceptions that may occur during the redraw process.
+                //This is to prevent the connector from breaking the application.
+                Console.WriteLine(ex.Message);
+            }
         }
 
         /// <summary>
