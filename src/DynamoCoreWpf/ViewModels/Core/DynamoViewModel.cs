@@ -2645,6 +2645,22 @@ namespace Dynamo.ViewModels
                 if (!isBackup && hasSaved)
                 {
                     AddToRecentFiles(path);
+
+                    // Track save and save-as operations on workspace, excluding the backup files.
+                    if (saveContext.Equals(SaveContext.Save))
+                    {
+                        Analytics.TrackTaskFileOperationEvent(
+                                  Path.GetFileName(path),
+                                  Logging.Actions.Save,
+                                  Model.CurrentWorkspace.Nodes.Count());
+                    }
+                    else if (saveContext.Equals(SaveContext.SaveAs))
+                    {
+                        Analytics.TrackTaskFileOperationEvent(
+                                  Path.GetFileName(path),
+                                  Logging.Actions.SaveAs,
+                                  Model.CurrentWorkspace.Nodes.Count());
+                    }
                 }
             }
             catch (Exception ex)
@@ -3234,6 +3250,11 @@ namespace Dynamo.ViewModels
 
         public void MakeNewHomeWorkspace(object parameter)
         {
+            Analytics.TrackTaskFileOperationEvent(
+                                  HomeSpace.Name,
+                                  Actions.New,
+                                  Convert.ToInt32(null));
+
             if (ClearHomeWorkspaceInternal())
             {
                 var t = new DelegateBasedAsyncTask(model.Scheduler, () => model.ResetEngine());
@@ -3250,6 +3271,12 @@ namespace Dynamo.ViewModels
 
         private void CloseHomeWorkspace(object parameter)
         {
+            // Tracking analytics for workspace file close operation.
+            Analytics.TrackTaskFileOperationEvent(
+                                     Path.GetFileName(model.CurrentWorkspace.FileName),
+                                     Logging.Actions.Close,
+                                     model.CurrentWorkspace.Nodes.Count());
+
             // Upon closing a workspace, validate if the workspace is valid to be sent to the ML datapipeline and then send it.
             if (!DynamoModel.IsTestMode && !HomeSpace.HasUnsavedChanges && (currentWorkspaceViewModel?.IsHomeSpace ?? true) && HomeSpace.HasRunWithoutCrash)
             {
@@ -3397,6 +3424,10 @@ namespace Dynamo.ViewModels
         {
             OnRequestSaveImage(this, new ImageSaveEventArgs(parameters.ToString()));
 
+            string message = String.Concat(WpfResources.ExportWorkspaceAsImage, parameters.ToString());
+
+            MainGuideManager?.CreateRealTimeInfoWindow(message, true);
+
             Dynamo.Logging.Analytics.TrackTaskCommandEvent("ImageCapture",
                 "NodeCount", CurrentSpace.Nodes.Count());
         }
@@ -3405,6 +3436,10 @@ namespace Dynamo.ViewModels
         {
             // Save the parameters
             OnRequestSave3DImage(this, new ImageSaveEventArgs(parameters.ToString()));
+
+            string message = String.Concat(WpfResources.ExportWorkspaceAs3DImage, parameters.ToString());
+
+            MainGuideManager?.CreateRealTimeInfoWindow(message, true);
         }
 
         internal bool CanSaveImage(object parameters)
