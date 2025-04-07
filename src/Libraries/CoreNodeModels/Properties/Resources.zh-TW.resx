@@ -340,7 +340,7 @@
     <value>建立給定範圍內的一系列數字或字母</value>
   </data>
   <data name="SequenceDescription" xml:space="preserve">
-    <value>建立一系列號碼。</value>
+    <value>建立一系列數字。</value>
   </data>
   <data name="OrDescription" xml:space="preserve">
     <value>布林 OR: 如果任一輸入為 true，則傳回 True。如果都不是 true，則傳回 False。</value>
@@ -626,15 +626,15 @@
 預設值: G</value>
   </data>
   <data name="CurveMapperCountInputPortName" xml:space="preserve">
-    <value>count</value>
+    <value>values</value>
   </data>
   <data name="CurveMapperCountInputPortToolTip" xml:space="preserve">
-    <value>Number of values to generate.
+    <value>Number of values to map or List of values to map.
 
 Default value (int): {0}</value>
   </data>
   <data name="CurveMapperDescription" xml:space="preserve">
-    <value>根據選取的數學曲線沿著 y 座標重新分佈 x 座標，精確控制點的分佈。</value>
+    <value>Redistributes a series of input values within the given range and maps them along a specified curve. If a single count is provided, it generates a series of values distributed along the x direction within the given range and then maps these values to the curve.</value>
   </data>
   <data name="CurveMapperSearchTags" xml:space="preserve">
     <value>graph;curve;mapper;math</value>
@@ -646,17 +646,17 @@ Default value (int): {0}</value>
     <value>x-MaxLimit</value>
   </data>
   <data name="CurveMapperXMaxLimitInputPortToolTip" xml:space="preserve">
-    <value>Maximum value for the X-axis domain.
+    <value>X 軸定義域的最大值。
 
-Default value (double): {0}</value>
+預設值 (double): {0}</value>
   </data>
   <data name="CurveMapperXMinLimitInputPortName" xml:space="preserve">
     <value>x-MinLimit</value>
   </data>
   <data name="CurveMapperXMinLimitInputPortToolTip" xml:space="preserve">
-    <value>Minimum value for the X-axis domain.
+    <value>X 軸定義域的最小值。
 
-Default value (double): {0}</value>
+預設值 (double): {0}</value>
   </data>
   <data name="CurveMapperXValuesOutputPortName" xml:space="preserve">
     <value>x-Values</value>
@@ -670,17 +670,17 @@ double[]</value>
     <value>y-MaxLimit</value>
   </data>
   <data name="CurveMapperYMaxLimitInputPortToolTip" xml:space="preserve">
-    <value>Maximum value for the Y-axis domain.
+    <value>Y 軸定義域的最大值。
 
-Default value (double): {0}</value>
+預設值 (double): {0}</value>
   </data>
   <data name="CurveMapperYMinLimitInputPortName" xml:space="preserve">
     <value>y-MinLimit</value>
   </data>
   <data name="CurveMapperYMinLimitInputPortToolTip" xml:space="preserve">
-    <value>Minimum value for the Y-axis domain.
+    <value>Y 軸定義域的最小值。
 
-Default value (double): {0}</value>
+預設值 (double): {0}</value>
   </data>
   <data name="CurveMapperYValuesOutputPortName" xml:space="preserve">
     <value>y-Values</value>
