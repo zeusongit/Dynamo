@@ -928,11 +928,8 @@ namespace Dynamo.Models
 
             AddHomeWorkspace();
 
-            if (!IsServiceMode)
-            {
-                AuthenticationManager = new AuthenticationManager(config.AuthProvider);
-            }
-
+            AuthenticationManager = new AuthenticationManager(config.AuthProvider);
+  
             Logger.Log(string.Format("Dynamo -- Build {0}",
                                         Assembly.GetExecutingAssembly().GetName().Version));
 
@@ -3766,7 +3763,7 @@ namespace Dynamo.Models
             return result;
         }
 
-        private void RecordUndoModels(WorkspaceModel workspace, List<ModelBase> undoItems)
+        internal static void RecordUndoModels(WorkspaceModel workspace, List<ModelBase> undoItems)
         {
             var userActionDictionary = new Dictionary<ModelBase, UndoRedoRecorder.UserAction>();
             //Add models that were newly created
