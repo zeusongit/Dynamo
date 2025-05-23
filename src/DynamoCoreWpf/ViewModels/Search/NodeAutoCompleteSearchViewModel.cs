@@ -45,6 +45,7 @@ namespace Dynamo.ViewModels
         private bool displayLowConfidence;
         private const string nodeAutocompleteMLEndpoint = "MLNodeAutocomplete";
         private const string nodeClusterAutocompleteMLEndpoint = "MLNodeClusterAutocomplete";
+        internal bool IsOpen { get; set; }
 
         // Lucene search utility to perform indexing operations just for NodeAutocomplete.
         internal LuceneSearchUtility LuceneUtility
@@ -583,6 +584,8 @@ namespace Dynamo.ViewModels
         {
             if (PortViewModel.PortModel.PortType == PortType.Input)
             {
+                string portType = PortViewModel.PortModel.GetInputPortType();
+                
                 switch (PortViewModel.PortModel.GetInputPortType())
                 {
                     case "int":
@@ -598,7 +601,15 @@ namespace Dynamo.ViewModels
                         FilteredResults = DefaultResults.Where(e => e.Name == "Boolean").ToList();
                         break;
                     default:
-                        FilteredResults = DefaultResults.Where(e => e.Name == "String" || e.Name == "Number Slider" || e.Name == "Integer Slider" || e.Name == "Number" || e.Name == "Boolean");
+                        bool isArray = portType != null && Regex.IsMatch(portType, @"(^|\.)List<[^>]+>$|(\[\])$");
+                        if (isArray)
+                        {
+                            FilteredResults = DefaultResults.Where(e => e.Model.FullCategoryName.EndsWith(".List"))?.ToList();
+                        }
+                        else
+                        {
+                            FilteredResults = DefaultResults.Where(e => e.Name == "String" || e.Name == "Number Slider" || e.Name == "Integer Slider" || e.Name == "Number" || e.Name == "Boolean");
+                        }
                         break;
                 }
             }
