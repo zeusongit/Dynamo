@@ -26,44 +26,31 @@
              d:DataContext="{d:DesignInstance Type=viewModels:AnnotationViewModel}">
 
     <UserControl.Resources>
-        <utilities:GroupStyleItemSelector
-            x:Key="GroupStyleItemSelector" />
-        <controls:StringToBrushColorConverter
-            x:Key="StringToBrushColorConverter" />
-        <controls:TextForegroundSaturationColorConverter
-            x:Key="TextForegroundSaturationColorConverter" />
-        <controls:BackgroundConditionEvaluator
-            x:Key="BackgroundConditionEvaluator" />
-        <CornerRadius
-            x:Key="ExpanderCornerRadius"
-            TopLeft="10"
-            TopRight="10" />
-        <Style
-            x:Key="ColorSelectorListBox"
-            TargetType="ListBox">
-            <Setter
-                Property="SnapsToDevicePixels"
-                Value="true" />
-            <Setter
-                Property="OverridesDefaultStyle"
-                Value="true" />
-            <Setter
-                Property="ScrollViewer.HorizontalScrollBarVisibility"
-                Value="Disabled" />
-            <Setter
-                Property="ScrollViewer.VerticalScrollBarVisibility"
-                Value="Hidden" />
-            <Setter
-                Property="ScrollViewer.CanContentScroll"
-                Value="true" />
-            <Setter
-                Property="Width"
-                Value="150" />
-            <Setter
-                Property="Height"
-                Value="54" />
-            <Setter
-                Property="Template">
+        <utilities:GroupStyleItemSelector x:Key="GroupStyleItemSelector"/>
+        <controls:StringToBrushColorConverter x:Key="StringToBrushColorConverter"/>
+        <controls:TextForegroundSaturationColorConverter x:Key="TextForegroundSaturationColorConverter"/>
+        <controls:BackgroundConditionEvaluator x:Key="BackgroundConditionEvaluator"/>
+        <controls:ZoomToVisibilityCollapsedConverter x:Key="ZoomToVisibilityCollapsedConverter" />
+        <CornerRadius x:Key="ExpanderCornerRadius"
+                      TopLeft="10"
+                      TopRight="10" />
+        <Style x:Key="ColorSelectorListBox"
+               TargetType="ListBox">
+            <Setter Property="SnapsToDevicePixels"
+                    Value="true" />
+            <Setter Property="OverridesDefaultStyle"
+                    Value="true" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility"
+                    Value="Disabled" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility"
+                    Value="Hidden" />
+            <Setter Property="ScrollViewer.CanContentScroll"
+                    Value="true" />
+            <Setter Property="Width"
+                    Value="150" />
+            <Setter Property="Height"
+                    Value="54" />
+            <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate
                         TargetType="ListBox">
@@ -288,10 +275,43 @@
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
-        <Style
-            TargetType="{x:Type Expander}">
-            <Setter
-                Property="Template">
+        <ControlTemplate x:Key="FrozenButtonZoomedInTemplate" TargetType="Button">
+            <Image x:Name="FrozenImageZoomedIn" Source="/DynamoCoreWpf;component/UI/Images/Annotations/frozen-dark-64px.png" />
+            <ControlTemplate.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="FrozenImageZoomedIn" Property="Source" Value="/DynamoCoreWpf;component/UI/Images/Annotations/frozen-hover-64px.png" />
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding DataContext.Background, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BackgroundConditionEvaluator}}" Value="True" />
+                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="False" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="FrozenImageZoomedIn" Property="Source" Value="/DynamoCoreWpf;component/UI/Images/Annotations/frozen-light-64px.png" />
+                </MultiDataTrigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <ControlTemplate x:Key="FrozenButtonZoomedOutTemplate" TargetType="Button">
+            <Image
+                x:Name="FrozenImageZoomedOut"
+                Width="{TemplateBinding Width}"
+                Height="{TemplateBinding Height}"
+                Source="/DynamoCoreWpf;component/UI/Images/Annotations/frozen-dark-64px.png" />
+            <ControlTemplate.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="FrozenImageZoomedOut" Property="Source" Value="/DynamoCoreWpf;component/UI/Images/Annotations/frozen-hover-64px.png" />
+                </MultiDataTrigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style TargetType="{x:Type Expander}">
+            <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate
                         TargetType="{x:Type Expander}">
@@ -333,12 +353,10 @@
                                 </Border.ToolTip>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition
-                                            Width="*" />
-                                        <ColumnDefinition
-                                            Width="Auto" />
-                                        <ColumnDefinition
-                                            Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <ContentPresenter
                                         Grid.ColumnSpan="3"
@@ -379,27 +397,54 @@
                                         </Image.Style>
                                     </Image>
 
+                                    <!--  Frozen Button/Icon  -->
+                                    <Grid>
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Path=DataContext.Zoom, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type views:WorkspaceView}}, Converter={StaticResource ZoomToVisibilityCollapsedConverter}}" Value="Visible">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
+                                        <Button
+                                            Width="16"
+                                            Height="16"
+                                            Margin="0,0,3.5,3"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Bottom"
+                                            Command="{Binding Path=ToggleIsFrozenGroupCommand}"
+                                            Template="{StaticResource FrozenButtonZoomedInTemplate}"
+                                            Visibility="{Binding DataContext.AnnotationModel.IsFrozen, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                                            <Button.ToolTip>
+                                                <ToolTip Style="{StaticResource GenericToolTipLight}">
+                                                    <TextBlock Text="{x:Static p:Resources.GroupFrozenButtonToolTip}" />
+                                                </ToolTip>
+                                            </Button.ToolTip>
+                                        </Button>
+                                    </Grid>
+
                                     <!--Expander button-->
-                                    <ToggleButton
-                                        OverridesDefaultStyle="True"
-                                        Grid.Column="1"
-                                        Margin="0,0,0,2.5"
-                                        Template="{StaticResource GroupExpanderTemplate}"
-                                        IsChecked="{Binding IsExpanded, Mode=TwoWay, 
-                                    RelativeSource={RelativeSource TemplatedParent}}"
-                                        VerticalAlignment="Bottom" />
+                                    <ToggleButton OverridesDefaultStyle="True"
+                                                  Grid.Column="2"
+                                                  Margin="0,0,0,2.5"
+                                                  Template="{StaticResource GroupExpanderTemplate}"
+                                                  IsChecked="{Binding IsExpanded, Mode=TwoWay, 
+                                                RelativeSource={RelativeSource TemplatedParent}}"
+                                                  VerticalAlignment="Bottom" />
 
                                     <!--Group context menu-->
-                                    <Button
-                                        x:Name="contextMenu"
-                                        Grid.Column="2"
-                                        Background="Transparent"
-                                        BorderBrush="Transparent"
-                                        BorderThickness="0"
-                                        Margin="0,2.5,0,2.5"
-                                        Height="16"
-                                        VerticalAlignment="Bottom"
-                                        Click="contextMenu_Click">
+                                    <Button x:Name="contextMenu"
+                                            Grid.Column="3"
+                                            Background="Transparent"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="0"
+                                            Margin="0,2.5,0,2.5"
+                                            Height="16"
+                                            VerticalAlignment="Bottom"
+                                            Click="contextMenu_Click">
                                         <Button.Style>
                                             <Style
                                                 TargetType="{x:Type Button}">
@@ -507,6 +552,11 @@
                 <MenuItem Name="DeleteAnnotation"
                           Click="OnDeleteAnnotation"
                           Header="{x:Static p:Resources.GroupContextMenuDeleteGroup}" />
+                <MenuItem Name="FreezeAnnotation"
+                          Command="{Binding Path=ToggleIsFrozenGroupCommand}"
+                          Header="{x:Static p:Resources.GroupContextMenuFreezeGroup}"
+                          IsCheckable="true"
+                          IsChecked="{Binding Path=AnnotationModel.IsFrozen, Mode=OneWay}"/>
                 <MenuItem Name="UngroupAnnotation"
                           Click="OnUngroupAnnotation"
                           Header="{x:Static p:Resources.GroupContextMenuUngroup}" />
@@ -668,6 +718,41 @@
                 </MenuItem>
             </ContextMenu>
         </Grid.ContextMenu>
+
+        <!--  Frozen button on zoomed out  -->
+        <Grid
+            Grid.Row="0"
+            Grid.RowSpan="2"
+            Grid.Column="0"
+            Grid.ColumnSpan="4"
+            Panel.ZIndex="1">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding DataContext.AnnotationModel.IsFrozen, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True" />
+                                <Condition Binding="{Binding DataContext.IsExpanded, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False" />
+                                <Condition Binding="{Binding Path=DataContext.Zoom, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type views:WorkspaceView}}, Converter={StaticResource ZoomToVisibilityCollapsedConverter}}" Value="Visible" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible" />
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Button
+                Width="64"
+                Height="64"
+                Command="{Binding Path=ToggleIsFrozenGroupCommand}"
+                Template="{StaticResource FrozenButtonZoomedOutTemplate}">
+                <Button.ToolTip>
+                    <ToolTip Style="{StaticResource GenericToolTipLight}">
+                        <TextBlock Text="{x:Static p:Resources.GroupFrozenButtonToolTip}" />
+                    </ToolTip>
+                </Button.ToolTip>
+            </Button>
+        </Grid>
 
         <!--Persistent border shows around the entire group at all time-->
         <Border Name="persistentBorder"

@@ -465,6 +465,7 @@
                         </TextBlock>
 
                         <TextBlock Width="Auto"
+                                   x:Name="NodeValue"
                                    Margin="{Binding Path=IsTopLevel, Converter={StaticResource TopLevelLabelMarginConverter}}"
                                    VerticalAlignment="Center"                                                                      
                                    FontFamily="{StaticResource SourceCodePro}"

@@ -222,7 +222,7 @@ Default value: 1</value>
     <value>Download latest version</value>
     <comment>Button Download Lastest</comment>
   </data>
-  <data name="052465" xml:space="preserve">
+  <data name="ArggOKButton" xml:space="preserve">
     <value>Arrrrg, ok</value>
     <comment>Button OK</comment>
   </data>
@@ -900,7 +900,7 @@ This package likely contains an assembly that is blocked. You will need to load 
     <value>Failed to insert the file as some of the nodes already exist in the current worspace.</value>
   </data>
   <data name="InsertDialogBoxText" xml:space="preserve">
-    <value>Insert Dynamo Definition...</value>
+    <value>Insert Dynamo Graph...</value>
   </data>
   <data name="InsertGraphRunModeNotificationText" xml:space="preserve">
     <value>Example file added to workspace. Run mode changed to Manual.</value>
