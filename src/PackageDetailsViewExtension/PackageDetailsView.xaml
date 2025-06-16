@@ -295,6 +295,60 @@
                            Style="{StaticResource BodyTextStyle}"
                            Text="{Binding PackageDescription}" />
 
+                    <!--  Nodes  -->
+                    <TextBlock Name="NodesTitle"
+                        Style="{StaticResource LabelStyle}"
+                        Text="Nodes" />
+
+                <TextBlock Name="NodesBody"
+                        MinWidth="200px"
+                        MaxHeight="200px"
+                        ScrollViewer.CanContentScroll="True"
+                        Margin="0,0,0,20"
+                        FontSize="14px"
+                        Style="{StaticResource BodyTextStyle}"
+                        Text="  Forma.Selection.SelectElements&#x0a;
+    Forma.Selection.GetTerrain&#x0a;
+    Forma.Selection.GetAllElements&#x0a;
+    Forma.Selection.GetSite&#x0a;
+    Forma.Application.SendGeometryToForma&#x0a;
+    Forma.Application.SendElementsToForma&#x0a;
+    DynamoForma.Forma.Elements.Element.ByUrn&#x0a;
+    DynamoForma.Forma.Elements.Element.URN&#x0a;
+    DynamoForma.Forma.Elements.Element.Path&#x0a;
+    DynamoForma.Forma.Elements.Element.Properties&#x0a;
+    DynamoForma.Forma.Elements.Element.TerrainShape&#x0a;
+    DynamoForma.Forma.Elements.Element.GFAUnits&#x0a;
+    DynamoForma.Forma.Elements.Element.Volume25DCollection&#x0a;
+    DynamoForma.Forma.Elements.Element.VolumeMesh&#x0a;
+    DynamoForma.Forma.Elements.Element.Footprint&#x0a;
+    DynamoForma.Forma.Elements.Element.HasRepresentation&#x0a;
+    DynamoForma.Forma.Elements.Element.GetAllChildren&#x0a;
+    DynamoForma.Forma.Elements.Element.Children&#x0a;
+    DynamoForma.Forma.Elements.Element.Transform&#x0a;
+    DynamoForma.Forma.Site.Site.Components&#x0a;
+    DynamoForma.Forma.Representations.Footprint.ByCurve&#x0a;
+    DynamoForma.Forma.Representations.GFAUnits.ByCurveAndElevation&#x0a;
+    DynamoForma.Forma.Representations.GFAUnits.ByUnits&#x0a;
+    DynamoForma.Forma.Representations.TerrainShape.ByCurve&#x0a;
+    DynamoForma.Forma.Representations.Volume25DCollection.ByCurveHeightAndElevation&#x0a;
+    DynamoForma.Forma.Representations.VolumeMesh.ByMeshOrSolid&#x0a;
+    DynamoForma.Forma.Elements.System.Basic.ByCurve&#x0a;
+    DynamoForma.Forma.Elements.System.Basic.ByClosedCurve&#x0a;
+    DynamoForma.Forma.Elements.System.Basic.ByClosedCurveAndHeight&#x0a;
+    DynamoForma.Forma.Elements.System.BasicBuilding.ByFloors&#x0a;
+    DynamoForma.Forma.Elements.System.Integrate.ByRepresentations&#x0a;
+    DynamoForma.Forma.Elements.System.Terrain.ElevationAt&#x0a;
+    DynamoForma.Forma.Analysis.Sun.RunSunAnalysis&#x0a;
+    DynamoForma.Forma.Analysis.Sun.GroundResult&#x0a;
+    DynamoForma.Forma.Analysis.Sun.SunHours&#x0a;
+    DynamoForma.Forma.Analysis.Sun.Id&#x0a;
+    DynamoForma.Forma.Analysis.Sun.Status&#x0a;
+    DynamoForma.Forma.Analysis.SunGround.Grid&#x0a;
+    DynamoForma.Forma.Analysis.SunGround.Mask&#x0a;
+    DynamoForma.Forma.Analysis.SunGround.BoundingBox&#x0a;
+    DynamoForma.Forma.Analysis.SunGround.Resolution&#x0a;" />
+
                 <!--  Group  -->
                 <StackPanel Orientation="Vertical" Visibility="{Binding Group, Converter={StaticResource EmptyStringToCollapsedConverter}}">
                     <TextBlock Name="GroupTitle"

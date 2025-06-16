@@ -66,6 +66,8 @@ namespace Dynamo.Applications
         public string CERLocation { get; set; } = String.Empty;
         [Option("ServiceMode", Required = false, HelpText = "Specify the service mode startup.")]
         public bool ServiceMode { get; set; }
+        [Option("ExtractPackageNodes", Required = false, HelpText = "Extract package nodes from all packages in the user directory")]
+        public bool ExtractPackageNodes { get; set; }
     }
 
     public static class StartupUtils
@@ -107,6 +109,7 @@ namespace Dynamo.Applications
                         NoNetworkMode = cmdArgs.NoNetworkMode,
                         AnalyticsInfo = new HostAnalyticsInfo() { HostName = cmdArgs.HostName, ParentId = cmdArgs.ParentId, SessionId = cmdArgs.SessionId },
                         CERLocation = cmdArgs.CERLocation,
+                        ExtractPackageNodes = cmdArgs.ExtractPackageNodes,
                         ServiceMode = cmdArgs.ServiceMode
                     };
                 }, errs => new CommandLineArguments());
@@ -136,6 +139,7 @@ namespace Dynamo.Applications
             public bool NoNetworkMode { get; set; }
             public HostAnalyticsInfo AnalyticsInfo { get; set; }
             public string CERLocation { get; set; }
+            public bool ExtractPackageNodes { get; set; }
 
             /// <summary>
             /// Boolean indication of launching Dynamo in service mode, this mode is optimized for minimal launch time

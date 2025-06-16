@@ -7,6 +7,7 @@ using System.Threading;
 using System.Xml;
 using DesignScript.Builtin;
 using Dynamo.Applications;
+using Dynamo.Core;
 using Dynamo.Graph.Workspaces;
 using Dynamo.Models;
 
@@ -29,6 +30,12 @@ namespace DynamoCLI
 
         private static XmlDocument RunCommandLineArgs(DynamoModel model, StartupUtils.CommandLineArguments cmdLineArgs)
         {
+            if (cmdLineArgs.ExtractPackageNodes)
+            {
+                GetPackageNodes(model);
+                return null;
+            }
+
             var evalComplete = false;
 
             if (string.IsNullOrEmpty(cmdLineArgs.OpenFilePath))
@@ -112,6 +119,74 @@ namespace DynamoCLI
             catch (Exception e)
             {
                 Console.WriteLine($"exception while trying to load assembly {path}: {e}");
+            }
+        }
+
+        /// <summary>
+        /// Attempts to extract nodes from default location and writes them to a JSON file categorized by type.
+        /// </summary>
+        /// <param name="model"></param>
+        protected internal static void GetPackageNodes(DynamoModel model)
+        {
+            try
+            {
+                var packagedNodes = model.SearchModel.Entries
+                    .Where(x => x.ElementType.HasFlag(Dynamo.Search.SearchElements.ElementTypes.Packaged))
+                    .ToList();
+
+                if (packagedNodes.Count == 0)
+                {
+                    Console.WriteLine("No package nodes found.");
+                    return;
+                }
+
+                Console.WriteLine($"Found {packagedNodes.Count} package nodes:");
+
+                // Categorize nodes by type
+                var zeroTouchNodes = new List<string>();
+                var customNodes = new List<string>();
+
+                foreach (var node in packagedNodes)
+                {
+                    var nodeName = node.FullName ?? node.Name;
+
+                    // Check if it's a custom node or zero touch
+                    if (node.ElementType.HasFlag(Dynamo.Search.SearchElements.ElementTypes.CustomNode))
+                    {
+                        customNodes.Add(nodeName);
+                    }
+                    else if (node.ElementType.HasFlag(Dynamo.Search.SearchElements.ElementTypes.ZeroTouch))
+                    {
+                        zeroTouchNodes.Add(nodeName);
+                    }
+                    else
+                    {
+                        // Default to ZeroTouch for other packaged nodes
+                        zeroTouchNodes.Add(nodeName);
+                    }
+                }
+
+                // Create the JSON structure
+                var result = new
+                {
+                    ZeroTouch = zeroTouchNodes.ToArray(),
+                    Custom = customNodes.ToArray()
+                };
+
+                // Write to JSON file using System.Text.Json
+                var options = new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+                var json = System.Text.Json.JsonSerializer.Serialize(result, options);
+                var outputPath = "package_nodes.json";
+                System.IO.File.WriteAllText(outputPath, json);
+
+                Console.WriteLine($"Wrote {zeroTouchNodes.Count} ZeroTouch nodes and {customNodes.Count} Custom nodes to {outputPath}");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"exception while trying to extract nodes: {e}");
             }
         }
 

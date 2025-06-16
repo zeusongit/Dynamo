@@ -2113,6 +2113,7 @@
     <Resource Include="UI\Images\reset-default.png" />
     <Resource Include="UI\Images\reset-hover.png" />
     <Resource Include="UI\Images\up_16_16.png" />
+    <Resource Include="UI\Images\up_16_162.png" />
     <Resource Include="UI\Images\up-hover-16px.png" />
     <Resource Include="UI\Images\link-16px.png" />
     <Content Include="sharpdx_direct3d11_effects_x64.dll">

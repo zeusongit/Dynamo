@@ -24,6 +24,29 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+
+                <Style x:Key="HoverButtonStyle" TargetType="Button">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+
+
+
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -121,12 +144,23 @@
                                                         <ToolTip Content="{Binding Path=Model.Name}" Style="{StaticResource GenericToolTipLight}"/>
                                                     </TextBlock.ToolTip>
                                                 </TextBlock>
+                                                <Button Name="UpdateAvailableButton"
+                                                       Width="30"
+                                                        Style="{StaticResource HoverButtonStyle}"
+                                                       VerticalAlignment="Center">
+                                                    <Image Source="/DynamoCoreWpf;component/UI/Images/up_16_162.png"
+                                                        Width="16"
+                                                        Height="16"/>
+                                                    <Button.ToolTip>
+                                                        <ToolTip Content="Update Available&#x0a;Latest: 2.0.4" Style="{StaticResource GenericToolTipLight}"/>
+                                                    </Button.ToolTip>
+                                                </Button>
                                                 <TextBlock Text="{Binding Path=Model.VersionName}"
                                                                MinWidth="70"
                                                                FontSize="12"
                                                                VerticalAlignment="Center"
                                                                Foreground="{StaticResource PreferencesWindowFontColor}"></TextBlock>
-                                               
+
                                             </StackPanel>
                                             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Width="Auto">
                                                 <Grid Height="18"
