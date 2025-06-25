@@ -56,6 +56,8 @@ namespace Dynamo.MCP
                 _viewLoadedParams.DynamoWindow.Dispatcher.Invoke(new Action(() =>
                 {
                     nodeModel = _dynamoModel.CreateNodeFromNameOrType(Guid.NewGuid(), creationName, true);
+                    nodeModel.X = x;
+                    nodeModel.Y = y;
 
                     _currentWorkspace.AddAndRegisterNode(nodeModel);
                 }));
