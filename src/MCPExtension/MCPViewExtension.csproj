@@ -1,26 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <UILib>true</UILib>
+    </PropertyGroup>
     <ImportGroup Label="PropertySheets">
         <Import Project="$(SolutionDir)Config\CS_SDK.props" />
     </ImportGroup>
   <PropertyGroup>
       <OutputType>Library</OutputType>
       <RootNamespace>Dynamo.MCP</RootNamespace>
-      <AssemblyName>MCPExtension</AssemblyName>
+      <AssemblyName>MCPViewExtension</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="MCP_ExtensionDefinition.xml" />
+    <Content Include="MCP_ViewExtensionDefinition.xml" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DynamoCoreWpf\DynamoCoreWpf.csproj" />
     <ProjectReference Include="..\DynamoCore\DynamoCore.csproj" />
     <ProjectReference Include="..\DynamoUtilities\DynamoUtilities.csproj" />
     <ProjectReference Include="..\NodeServices\DynamoServices.csproj" />
   </ItemGroup>
     <Target Name="GenerateExtension" AfterTargets="Build">
         <ItemGroup>
-            <ExtensionDefinition Include="MCP_ExtensionDefinition.xml" />
+            <ViewExtensionDefinition Include="MCP_ViewExtensionDefinition.xml" />
         </ItemGroup>
-        <Copy SourceFiles="@(ExtensionDefinition)" DestinationFolder="$(OutputPath)\extensions" />
+        <Copy SourceFiles="@(ViewExtensionDefinition)" DestinationFolder="$(OutputPath)\viewExtensions" />
     </Target>
 </Project>

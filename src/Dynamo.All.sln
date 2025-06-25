@@ -211,7 +211,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DynamoCoreWpf2Tests", "..\t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DynamoCoreWpf3Tests", "..\test\DynamoCoreWpf3Tests\DynamoCoreWpf3Tests.csproj", "{AC60AA1B-5F76-4AA4-8A87-866B3E3F7069}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCPExtension", "MCPExtension\MCPExtension.csproj", "{9F8A5D50-7354-4D20-98B1-96B05B52E70C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCPViewExtension", "MCPExtension\MCPViewExtension.csproj", "{9F8A5D50-7354-4D20-98B1-96B05B52E70C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

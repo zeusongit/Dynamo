@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using Autodesk.DesignScript.Runtime;
 using Dynamo.Extensions;
 using Dynamo.Graph.Nodes;
 using Dynamo.Graph.Workspaces;
 using Dynamo.Models;
 using Dynamo.Search.SearchElements;
+using Dynamo.Wpf.Extensions;
 using Application = System.Windows.Application;
 
 namespace Dynamo.MCP
@@ -18,18 +20,24 @@ namespace Dynamo.MCP
     {
         private static DynamoModel? _dynamoModel;
         private static WorkspaceModel? _currentWorkspace;
-        private static ReadyParams? _readyParams;
+        private static ViewLoadedParams? _viewLoadedParams;
 
         /// <summary>
         /// Initialize from Extension parameters
         /// </summary>
-        public static string InitializeFromExtension(DynamoModel dynamoModel)
+        public static string InitializeFromViewExtension(ViewLoadedParams viewLoadedParams)
         {
             try
             {
-                _dynamoModel = dynamoModel;
-                _currentWorkspace = dynamoModel.CurrentWorkspace as WorkspaceModel;
-                
+                _viewLoadedParams = viewLoadedParams;
+                _currentWorkspace = viewLoadedParams.CurrentWorkspaceModel as WorkspaceModel;
+
+                // Get DynamoModel from the view context if needed
+                if (viewLoadedParams.DynamoWindow?.DataContext is Dynamo.ViewModels.DynamoViewModel dynamoViewModel)
+                {
+                    _dynamoModel = dynamoViewModel.Model;
+                }
+
                 return $"DynamoWorkspaceTools initialized successfully from Extension. Workspace: {_currentWorkspace?.Name ?? "Unknown"}";
             }
             catch (Exception ex)
@@ -42,15 +50,20 @@ namespace Dynamo.MCP
         {
             try
             {
-                NodeModel nodeModel;
+                NodeModel nodeModel = null;
 
-                Dispatcher.Invoke(new Action(() =>
+
+                _viewLoadedParams.DynamoWindow.Dispatcher.Invoke(new Action(() =>
                 {
                     nodeModel = _dynamoModel.CreateNodeFromNameOrType(Guid.NewGuid(), creationName, true);
 
                     _currentWorkspace.AddAndRegisterNode(nodeModel);
                 }));
 
+                if (nodeModel is null)
+                {
+                    return $"Error creating node: {creationName}";
+                }
                 return $"Created node '{creationName}' at position ({x}, {y}). Node ID: {nodeModel.GUID}";
             }
             catch (Exception e)
