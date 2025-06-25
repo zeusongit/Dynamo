@@ -1,15 +1,26 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
+    <ImportGroup Label="PropertySheets">
+        <Import Project="$(SolutionDir)Config\CS_SDK.props" />
+    </ImportGroup>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+      <OutputType>Library</OutputType>
+      <RootNamespace>Dynamo.MCP</RootNamespace>
+      <AssemblyName>MCPExtension</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="MCP_ExtensionDefinition.xml" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DynamoCore\DynamoCore.csproj" />
     <ProjectReference Include="..\DynamoUtilities\DynamoUtilities.csproj" />
     <ProjectReference Include="..\NodeServices\DynamoServices.csproj" />
   </ItemGroup>
-
+    <Target Name="GenerateExtension" AfterTargets="Build">
+        <ItemGroup>
+            <ExtensionDefinition Include="MCP_ExtensionDefinition.xml" />
+        </ItemGroup>
+        <Copy SourceFiles="@(ExtensionDefinition)" DestinationFolder="$(OutputPath)\extensions" />
+    </Target>
 </Project>

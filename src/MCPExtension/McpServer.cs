@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.Net;
@@ -12,8 +13,10 @@ using Dynamo.Core;
 using Dynamo.Utilities;
 using Dynamo.Graph.Nodes.ZeroTouch;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace MyDynamoExtension
+namespace Dynamo.MCP
 {
     /// <summary>
     /// MCP Server that provides tools for controlling Dynamo workspace
@@ -316,23 +319,23 @@ namespace MyDynamoExtension
 
                 string result = name switch
                 {
-                    "create_node" => DynamoWorkspaceTools.CreateNode(
-                        arguments.GetProperty("nodeType").GetString()!,
-                        arguments.GetProperty("x").GetDouble(),
-                        arguments.GetProperty("y").GetDouble(),
-                        arguments.TryGetProperty("initialValue", out var val) ? val.GetString() : null),
-                    "connect_nodes" => DynamoWorkspaceTools.ConnectNodes(
-                        arguments.GetProperty("sourceNodeId").GetString()!,
-                        arguments.GetProperty("targetNodeId").GetString()!,
-                        arguments.TryGetProperty("sourcePortIndex", out var spi) ? spi.GetInt32() : 0,
-                        arguments.TryGetProperty("targetPortIndex", out var tpi) ? tpi.GetInt32() : 0),
-                    "delete_node" => DynamoWorkspaceTools.DeleteNode(arguments.GetProperty("nodeId").GetString()!),
-                    "get_workspace_info" => DynamoWorkspaceTools.GetWorkspaceInfo(),
-                    "run_graph" => DynamoWorkspaceTools.RunGraph(),
-                    "set_node_value" => DynamoWorkspaceTools.SetNodeValue(
-                        arguments.GetProperty("nodeId").GetString()!,
-                        arguments.GetProperty("value").GetString()!),
-                    "get_available_node_types" => DynamoWorkspaceTools.GetAvailableNodeTypes(),
+                    //"create_node" => DynamoWorkspaceTools.CreateNode(
+                    //    arguments.GetProperty("nodeType").GetString()!,
+                    //    arguments.GetProperty("x").GetDouble(),
+                    //    arguments.GetProperty("y").GetDouble(),
+                    //    arguments.TryGetProperty("initialValue", out var val) ? val.GetString() : null),
+                    //"connect_nodes" => DynamoWorkspaceTools.ConnectNodes(
+                    //    arguments.GetProperty("sourceNodeId").GetString()!,
+                    //    arguments.GetProperty("targetNodeId").GetString()!,
+                    //    arguments.TryGetProperty("sourcePortIndex", out var spi) ? spi.GetInt32() : 0,
+                    //    arguments.TryGetProperty("targetPortIndex", out var tpi) ? tpi.GetInt32() : 0),
+                    //"delete_node" => DynamoWorkspaceTools.DeleteNode(arguments.GetProperty("nodeId").GetString()!),
+                    //"get_workspace_info" => DynamoWorkspaceTools.GetWorkspaceInfo(),
+                    //"run_graph" => DynamoWorkspaceTools.RunGraph(),
+                    //"set_node_value" => DynamoWorkspaceTools.SetNodeValue(
+                    //    arguments.GetProperty("nodeId").GetString()!,
+                    //    arguments.GetProperty("value").GetString()!),
+                    //"get_available_node_types" => DynamoWorkspaceTools.GetAvailableNodeTypes(),
                     _ => "Unknown tool: " + name
                 };
 
