@@ -7,6 +7,7 @@ namespace Dynamo.MCP
     public class McpExtension : IExtension
     {
         public bool readyCalled = false;
+        internal DynamoModel _dynamoModel;
         public void Dispose()
         {
         }
@@ -21,10 +22,14 @@ namespace Dynamo.MCP
         public void Ready(ReadyParams rp)
         {
             // Get DynamoModel instance
-            var dynamoModel = GetDynamoModelFromReadyParams(rp);
+            _dynamoModel = GetDynamoModelFromReadyParams(rp);
 
             // Start the MCP server automatically
             var serverResult = DynamoMcpServer.StartMcpServer();
+
+            WorkspaceTools.InitializeFromExtension(_dynamoModel);
+
+            _dynamoModel.Logger.LogInfo("MCP",serverResult);
 
             this.readyCalled = true;
         }
@@ -38,6 +43,8 @@ namespace Dynamo.MCP
 
     public void Shutdown()
         {
+            // Stop the MCP server when extension shuts down
+            var serverResult = DynamoMcpServer.StopMcpServer();
         }
     }
 }

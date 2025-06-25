@@ -288,8 +288,8 @@ namespace Dynamo.MCP
                 },
                 new
                 {
-                    name = "get_available_node_types",
-                    description = "Get a list of available node types that can be created in Dynamo",
+                    name = "get_all_available_nodes",
+                    description = "Get a list of available nodes that can be created in Dynamo",
                     inputSchema = new
                     {
                         type = "object",
@@ -319,11 +319,11 @@ namespace Dynamo.MCP
 
                 string result = name switch
                 {
-                    //"create_node" => DynamoWorkspaceTools.CreateNode(
-                    //    arguments.GetProperty("nodeType").GetString()!,
-                    //    arguments.GetProperty("x").GetDouble(),
-                    //    arguments.GetProperty("y").GetDouble(),
-                    //    arguments.TryGetProperty("initialValue", out var val) ? val.GetString() : null),
+                    "create_node" => WorkspaceTools.CreateNode(
+                        arguments.GetProperty("nodeType").GetString()!,
+                        arguments.GetProperty("x").GetDouble(),
+                        arguments.GetProperty("y").GetDouble(),
+                        arguments.TryGetProperty("initialValue", out var val) ? val.GetString() : null),
                     //"connect_nodes" => DynamoWorkspaceTools.ConnectNodes(
                     //    arguments.GetProperty("sourceNodeId").GetString()!,
                     //    arguments.GetProperty("targetNodeId").GetString()!,
@@ -335,7 +335,7 @@ namespace Dynamo.MCP
                     //"set_node_value" => DynamoWorkspaceTools.SetNodeValue(
                     //    arguments.GetProperty("nodeId").GetString()!,
                     //    arguments.GetProperty("value").GetString()!),
-                    //"get_available_node_types" => DynamoWorkspaceTools.GetAvailableNodeTypes(),
+                    "get_all_available_nodes" => WorkspaceTools.GetAllAvailableNodes(),
                     _ => "Unknown tool: " + name
                 };
 
