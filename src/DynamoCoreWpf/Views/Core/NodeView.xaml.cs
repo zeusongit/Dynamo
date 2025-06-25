@@ -318,6 +318,7 @@ namespace Dynamo.Controls
             _nodeButtonDotsSelected.Freeze();
             _nodeButtonDots.Freeze();
             _defaultNodeIcon.Freeze();
+            LoadBmpPorts();
         }
 
         public NodeView()
@@ -1417,6 +1418,48 @@ namespace Dynamo.Controls
             return inOutPortControlStyle;
         }
 
+        //Set up pixel arrays for the port markers 
+        static byte[] bluePixels = new byte[5 * 29 * 4];
+        static byte[] bluePixelsDefault = new byte[4 * 27 * 4];
+        static byte[] redPixels = new byte[5 * 29 * 4];
+        static byte[] greyPixels = new byte[5 * 29 * 4];
+
+        //Initialize the port arrays
+        private static void LoadBmpPorts()
+        {            
+            for (int i = 0; i < bluePixels.Length; i += 4)
+            {
+                bluePixels[i + 0] = 231; // Blue
+                bluePixels[i + 1] = 192; // Green
+                bluePixels[i + 2] = 106; // Red
+                bluePixels[i + 3] = 255; // Alpha
+            }
+
+            for (int i = 0; i < bluePixelsDefault.Length; i += 4)
+            {
+                bluePixelsDefault[i + 0] = 231; // Blue
+                bluePixelsDefault[i + 1] = 192; // Green
+                bluePixelsDefault[i + 2] = 106; // Red
+                bluePixelsDefault[i + 3] = 255; // Alpha
+            }
+
+            for (int i = 0; i < redPixels.Length; i += 4)
+            {
+                redPixels[i + 0] = 85; // Blue
+                redPixels[i + 1] = 85; // Green
+                redPixels[i + 2] = 235; // Red
+                redPixels[i + 3] = 255; // Alpha
+            }
+
+            for (int i = 0; i < greyPixels.Length; i += 4)
+            {
+                greyPixels[i + 0] = 153; // Blue
+                greyPixels[i + 1] = 153; // Green
+                greyPixels[i + 2] = 153; // Red
+                greyPixels[i + 3] = 255; // Alpha
+            }
+        }
+
         private void OnNodeViewUnloaded(object sender, RoutedEventArgs e)
         {
             ViewModel.NodeLogic.DispatchedToUI -= NodeLogic_DispatchedToUI;
@@ -1497,18 +1540,95 @@ namespace Dynamo.Controls
             if (System.IO.File.Exists(path))
             {
                 var bitmap = new BitmapImage(new Uri(path, UriKind.Absolute));
+                var writeableBitmap = new WriteableBitmap(bitmap);
+
+                // Define rectangle position and size
+                int width = 5, height = 29;
+                int bytesPerPixel = (writeableBitmap.Format.BitsPerPixel + 7) / 8;
+
+                int j = 0;
+                
+                foreach (var item in ViewModel.InPorts)
+                {
+                    var model = item as InPortViewModel;
+                    // Define the rectangle's position and size
+                    int x = 0; // X coordinate
+                    int y = 52 + j; // Y coordinate
+
+                    if (model.PortValueMarkerColor.Color.R == 106)
+                    {
+                        writeableBitmap.WritePixels(
+                            new Int32Rect(x + 5, y, width, height),
+                            bluePixels,
+                            width * bytesPerPixel,
+                            0
+                        );
+                    }
+                    else if(model.PortValueMarkerColor.Color.R == 235)
+                    {
+                        writeableBitmap.WritePixels(
+                            new Int32Rect(x + 5, y, width, height),
+                            redPixels,
+                            width * bytesPerPixel,
+                            0
+                        );
+                    }
+                    else
+                    {
+                        writeableBitmap.WritePixels(
+                            new Int32Rect(x + 5, y, width, height),
+                            greyPixels,
+                            width * bytesPerPixel,
+                            0
+                        );
+                    }
+
+                    if (model.PortDefaultValueMarkerVisible)
+                    {
+                        writeableBitmap.WritePixels(
+                            new Int32Rect(x, y + 1, width - 1, height - 2),
+                            bluePixelsDefault,
+                            (width-1) * bytesPerPixel,
+                            0
+                        );
+                    }
+
+                    j += 34;
+                }
+
+                j = 0;
+                foreach (var item in ViewModel.OutPorts)
+                {
+                    var model = item as OutPortViewModel;
+                    // Define the rectangle's position and size
+                    int x = (int)writeableBitmap.Width - 5; // X coordinate 
+                    int y = 53 + j; // Y coordinate 
+
+                    if (model.PortDefaultValueMarkerVisible)
+                    {
+                        writeableBitmap.WritePixels(
+                            new Int32Rect(x, y, width, height),
+                            greyPixels,
+                            width * bytesPerPixel,
+                            0
+                        );
+                    }
+
+                    j += 34;
+                }
 
                 // Create the Image control
                 imageControl = new Image
                 {
-                    Source = bitmap,
-                    Width = bitmap.PixelWidth,   // Set width to pixel width
-                    Height = bitmap.PixelHeight, // Set height to pixel height
+                    Source = writeableBitmap,
+                    Margin = new Thickness(-5, 0, 0, 0),
+                    Width = writeableBitmap.PixelWidth,   // Set width to pixel width
+                    Height = writeableBitmap.PixelHeight, // Set height to pixel height
                     Stretch = System.Windows.Media.Stretch.None // Prevent scaling
                 };
 
                 Grid.SetRow(imageControl, 1);
-                Grid.SetRowSpan(imageControl, 4);
+                Grid.SetRowSpan(imageControl, 3);
                 Grid.SetColumnSpan(imageControl, 3);
 
                 grid.Children.Add(imageControl);
@@ -2028,7 +2148,7 @@ namespace Dynamo.Controls
             }
             // If it's condensed, then try to hide it.
             if (PreviewControl.IsCondensed && Mouse.Captured == null)
-            {
+            {   
                 PreviewControl.TransitionToState(PreviewControl.State.Hidden);
             }
         }
