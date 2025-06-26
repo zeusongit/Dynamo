@@ -220,6 +220,36 @@ namespace Dynamo.MCP
                 },
                 new
                 {
+                   name = "create_multiple_nodes",
+                   description = "Create multiple nodes in the Dynamo workspace at specified coordinates",
+                   inputSchema = new
+                   {
+                       type = "object",
+                       properties = new
+                       {
+                           nodes = new
+                           {
+                               type = "array",
+                               description = "Array of nodes to create, each with type, coordinates, and optional initial value",
+                               items = new
+                               {
+                                   type = "object",
+                                   properties = new
+                                   {
+                                       nodeType = new { type = "string", description = "Type of node to create (e.g., 'CoreNodeModels.Input.DoubleInput', 'DSCore.Math.Add')" },
+                                       x = new { type = "number", description = "X coordinate in the workspace" },
+                                       y = new { type = "number", description = "Y coordinate in the workspace" },
+                                       initialValue = new { type = "string", description = "Initial value for the node (optional)" }
+                                   },
+                                   required = new[] { "nodeType", "x", "y" }
+                               }
+                           }
+                       },
+                       required = new[] { "nodes" }
+                   }
+               },
+                new
+                {
                     name = "connect_nodes",
                     description = "Connect the output of one node to the input of another node",
                     inputSchema = new
@@ -324,13 +354,15 @@ namespace Dynamo.MCP
                         arguments.GetProperty("x").GetDouble(),
                         arguments.GetProperty("y").GetDouble(),
                         arguments.TryGetProperty("initialValue", out var val) ? val.GetString() : null),
+                    "create_multiple_nodes"=> WorkspaceTools.CreateMultipleNodes(
+                        arguments.GetProperty("nodes")),
                     "connect_nodes" => WorkspaceTools.ConnectNodes(
                         arguments.GetProperty("sourceNodeId").GetString()!,
                         arguments.GetProperty("targetNodeId").GetString()!,
                        arguments.TryGetProperty("sourcePortIndex", out var spi) ? spi.GetInt32() : 0,
                        arguments.TryGetProperty("targetPortIndex", out var tpi) ? tpi.GetInt32() : 0),
                     //"delete_node" => DynamoWorkspaceTools.DeleteNode(arguments.GetProperty("nodeId").GetString()!),
-                    //"get_workspace_info" => DynamoWorkspaceTools.GetWorkspaceInfo(),
+                    "get_workspace_info" => WorkspaceTools.GetWorkspaceInfo(),
                     //"run_graph" => DynamoWorkspaceTools.RunGraph(),
                     "set_node_value" => WorkspaceTools.SetNodeValue(
                         arguments.GetProperty("nodeId").GetString()!,

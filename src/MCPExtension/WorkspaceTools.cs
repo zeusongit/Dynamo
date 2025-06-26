@@ -23,6 +23,7 @@ namespace Dynamo.MCP
         private static DynamoModel? _dynamoModel;
         private static WorkspaceModel? _currentWorkspace;
         private static ViewLoadedParams? _viewLoadedParams;
+        private static Dictionary<string, NodeModel> _createdNodes = new Dictionary<string, NodeModel>();
 
         /// <summary>
         /// Initialize from Extension parameters
@@ -45,6 +46,62 @@ namespace Dynamo.MCP
             catch (Exception ex)
             {
                 return $"Failed to initialize from Extension: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Get information about the current workspace
+        /// </summary>
+        [IsVisibleInDynamoLibrary(true)]
+        public static string GetWorkspaceInfo()
+        {
+            try
+            {
+
+                try
+                {
+                    var allNodes = _currentWorkspace.Nodes.ToList();
+                    var allConnectors = _currentWorkspace.Connectors.ToList();
+
+                    var workspaceInfo = new
+                    {
+                        WorkspaceName = _currentWorkspace.Name ?? "Unnamed",
+                        WorkspaceGuid = _currentWorkspace.Guid.ToString(),
+                        TotalNodes = allNodes.Count,
+                        TotalConnectors = allConnectors.Count,
+                        TrackedNodes = _createdNodes.Count,
+                        ModelInitialized = _dynamoModel != null,
+                        Nodes = allNodes.Select(n => new
+                        {
+                            Id = n.GUID.ToString(),
+                            Type = n.GetType().Name,
+                            Name = n.Name ?? "Unnamed",
+                            Position = new { X = n.X, Y = n.Y },
+                            InputPorts = n.InPorts.Count,
+                            OutputPorts = n.OutPorts.Count
+                        }).ToList(),
+                        Connectors = allConnectors.Select(c => new
+                        {
+                            Id = c.GUID.ToString(),
+                            SourceNode = c.Start?.Owner?.GUID.ToString() ?? "Unknown",
+                            TargetNode = c.End?.Owner?.GUID.ToString() ?? "Unknown"
+                        }).ToList()
+                    };
+
+                    return JsonSerializer.Serialize(workspaceInfo, new JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return $"Error accessing workspace data: {ex.Message}. Try using the extension from within Dynamo.";
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"Error getting workspace info: {ex.Message}";
             }
         }
 
@@ -75,6 +132,32 @@ namespace Dynamo.MCP
                 return $"Error creating node: {e.Message}";
             }
          
+        }
+
+        public static string CreateMultipleNodes(JsonElement nodes)
+        {
+            try
+            {
+                foreach (var nodeElement in nodes.EnumerateArray())
+                {
+                    string creationName = nodeElement.GetProperty("nodeType").GetString();
+                    double x = nodeElement.GetProperty("x").GetDouble();
+                    double y = nodeElement.GetProperty("y").GetDouble();
+                    string? initialValue = nodeElement.TryGetProperty("initialValue", out var valueProperty) ? valueProperty.GetString() : null;
+
+                    string result = CreateNode(creationName, x, y, initialValue);
+                    if (result.StartsWith("Error"))
+                    {
+                        return $"Failed to create node: {result}";
+                    }
+                }
+
+                return "All nodes created successfully.";
+            }
+            catch (Exception ex)
+            {
+                return $"Error creating multiple nodes: {ex.Message}";
+            }
         }
 
         /// <summary>
@@ -176,7 +259,6 @@ namespace Dynamo.MCP
                     AllNodeTypes = allNodes.OrderBy(nt => nt.CreationName).Select(nt => new
                     {
                         CreationName = nt.CreationName,
-                        Name = nt.Name,
                         Assembly = nt.Assembly,
                         Category = nt.FullCategoryName
                     }).ToList()
