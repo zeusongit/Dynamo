@@ -1,3 +1,19 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
+using System.Security.RightsManagement;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+using System.Xml.Linq;
 using Dynamo.Configuration;
 using Dynamo.Graph.Nodes;
 using Dynamo.Selection;
@@ -9,20 +25,6 @@ using Dynamo.ViewModels;
 using Dynamo.Views;
 using Dynamo.Wpf.Utilities;
 using HelixToolkit.Wpf.SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Windows.Threading;
 using DynCmd = Dynamo.Models.DynamoModel;
 using Label = System.Windows.Controls.Label;
 using Thickness = System.Windows.Thickness;
@@ -1139,6 +1141,13 @@ namespace Dynamo.Controls
 
             //TODO DebugAST Canvas.  Do we need this?
 
+            //GlyphStackPanel.Visibility = Visibility.Visible;
+            //nodeBackground.Visibility = Visibility.Visible;
+            //nameBackground.Visibility = Visibility.Visible;
+            //nodeHeaderContent.Visibility = Visibility.Visible;
+            //inputPortControl.Visibility = Visibility.Visible;
+            //outputPortControl.Visibility = Visibility.Visible;
+
             grid.Children.Add(nodeBackground);
             grid.Children.Add(nameBackground);
             grid.Children.Add(nodeHeaderContent);
@@ -1146,7 +1155,7 @@ namespace Dynamo.Controls
             grid.Children.Add(outputPortControl);
             grid.Children.Add(GlyphStackPanel);
             grid.Children.Add(nodeBorder);
-            grid.Children.Add(selectionBorder);
+            //grid.Children.Add(selectionBorder);
             grid.Children.Add(nodeColorOverlayZoomIn);
             grid.Children.Add(nodeTransientColorOverlayZoomIn);
             grid.Children.Add(nodeColorOverlayZoomOut);
@@ -1535,8 +1544,8 @@ namespace Dynamo.Controls
             ViewModel = e.NewValue as NodeViewModel;
 
             //Todo move to static resource file
-            //Todo handle cases where Name is the same for multiple nodes (ie Point.ByCoordinate)
-            var path = "C:\\Temp\\NodeCache\\" + ViewModel.Name + ".png";
+            var nodeName = GetNodeName(ViewModel);
+            var path = "C:\\Temp\\NodeCacheNew\\" + nodeName + ".png";
             if (System.IO.File.Exists(path))
             {
                 var bitmap = new BitmapImage(new Uri(path, UriKind.Absolute));
@@ -1545,6 +1554,27 @@ namespace Dynamo.Controls
                 // Define rectangle position and size
                 int width = 5, height = 29;
                 int bytesPerPixel = (writeableBitmap.Format.BitsPerPixel + 7) / 8;
+                int bufferWidth = 5;
+                int imageHeight = writeableBitmap.PixelHeight;
+
+                byte[] transparentPixels = new byte[bufferWidth * imageHeight * bytesPerPixel];
+
+                // Fill with transparent pixels (all zeros = transparent)
+                for (int i = 0; i < transparentPixels.Length; i += 4)
+                {
+                    transparentPixels[i + 0] = 0;   // Blue
+                    transparentPixels[i + 1] = 0;   // Green  
+                    transparentPixels[i + 2] = 0;   // Red
+                    transparentPixels[i + 3] = 0;   // Alpha (transparent)
+                }
+
+                // Write transparent pixels to the left 5px of the image
+                writeableBitmap.WritePixels(
+                    new Int32Rect(0, 0, bufferWidth, imageHeight),
+                    transparentPixels,
+                    bufferWidth * bytesPerPixel,
+                    0
+                );
 
                 int j = 0;
                 
@@ -1553,7 +1583,7 @@ namespace Dynamo.Controls
                     var model = item as InPortViewModel;
                     // Define the rectangle's position and size
                     int x = 0; // X coordinate
-                    int y = 52 + j; // Y coordinate
+                    int y = 57 + j; // Y coordinate
 
                     if (model.PortValueMarkerColor.Color.R == 106)
                     {
@@ -1633,16 +1663,16 @@ namespace Dynamo.Controls
 
                 grid.Children.Add(imageControl);
 
-                Dispatcher.CurrentDispatcher.BeginInvoke(() =>
-                {
-                    if (imageControl != null)
-                    {
-                        grid.Children.Remove(imageControl);
-                        imageControl = null;
+                //Dispatcher.CurrentDispatcher.BeginInvoke(() =>
+                //{
+                //    if (imageControl != null)
+                //    {
+                //        grid.Children.Remove(imageControl);
+                //        imageControl = null;
 
-                        SetNodeBackgroundHeaderAndPortsVisible();
-                    }
-                }, DispatcherPriority.Background);
+                //        SetNodeBackgroundHeaderAndPortsVisible();
+                //    }
+                //}, DispatcherPriority.Background);
             }
             else
             {
@@ -1749,9 +1779,93 @@ namespace Dynamo.Controls
             nodeBorder.Height = size.Height;
             nodeBorder.RenderSize = size;
         }
-
+        private string GetNodeName(NodeViewModel nvm)
+        {
+            switch (nvm.OriginalName)
+            {
+                case "*":
+                    return "mul";
+                case "<":
+                    return "lt";
+                case "<=":
+                    return "le";
+                case ">":
+                    return "gt";
+                case ">=":
+                    return "ge";
+                case "||":
+                    return "or";
+                case "/":
+                    return "div";
+                default:
+                    return ViewModel.DynamoViewModel.GetMinimumQualifiedName(nvm.NodeModel);
+            }
+        }
         private void OnNodeViewLoaded(object sender, RoutedEventArgs e)
         {
+            //Save
+            var width = (int)grid.ActualWidth;
+            var height = (int)grid.ActualHeight;
+            var bheight = (int)nodeBorder.ActualHeight;
+
+            if (width == 0 && height == 0)
+            {
+                return;
+            }
+
+            var sy = height - bheight + 2;
+            var sh = bheight - 2;
+
+            // Create the original render target bitmap
+            var originalRtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            originalRtb.Render(grid);
+
+            var croppedBitmap = new CroppedBitmap(originalRtb, new Int32Rect(0, sy, width, sh));
+
+            // Create a new bitmap with 5px buffer on the left
+            var newWidth = width + 5;
+            var bufferedRtb = new RenderTargetBitmap(newWidth, sh, 96, 96, PixelFormats.Pbgra32);
+
+            // Create a DrawingVisual to composite the images
+            var drawingVisual = new DrawingVisual();
+            using (var drawingContext = drawingVisual.RenderOpen())
+            {
+                // Fill the entire area with transparent background (optional, as it's transparent by default)
+                drawingContext.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, newWidth, height));
+
+                // Draw the original bitmap offset by 5px to the right
+                drawingContext.DrawImage(croppedBitmap, new Rect(5, 0, width, sh));
+            }
+
+            // Render the composite to the new bitmap
+            bufferedRtb.Render(drawingVisual);
+
+            // Encode and save the buffered bitmap
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bufferedRtb));
+
+            var cachePath = "C:\\Temp\\NodeCacheNew\\";
+
+            if (!System.IO.Directory.Exists(cachePath))
+            {
+                System.IO.Directory.CreateDirectory(cachePath);
+            }
+            var nname = GetNodeName(ViewModel);
+            try
+            {
+                
+                if (!System.IO.File.Exists(cachePath + nname + ".png"))
+                {
+                    using (var stream = new System.IO.FileStream(cachePath + nname + ".png", System.IO.FileMode.Create))
+                    {
+                        encoder.Save(stream);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.IO.File.AppendAllText("C:\\Temp\\FailedNodes.txt", nname + Environment.NewLine);
+            }
             // We no longer cache the DataContext (NodeViewModel) here because 
             // OnNodeViewLoaded gets called at a much later time and we need the 
             // ViewModel to be valid earlier (e.g. OnSizeChanged is called before

@@ -213,8 +213,8 @@ namespace Dynamo.UI.Controls
 
             MainGrid.Children.Add(PortSnapping);
             MainGrid.Children.Add(PortBackgroundBorder);
-            MainGrid.Children.Add(PortValueMarker);
-            MainGrid.Children.Add(PortDefaultValueMarker);
+            //MainGrid.Children.Add(PortValueMarker);
+            //MainGrid.Children.Add(PortDefaultValueMarker);
             MainGrid.Children.Add(PortNameTextBox);
             MainGrid.Children.Add(NodeAutoCompleteHover);
 

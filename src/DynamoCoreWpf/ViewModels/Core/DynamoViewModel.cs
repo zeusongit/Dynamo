@@ -55,6 +55,8 @@ using ICSharpCode.AvalonEdit;
 using J2N.Text;
 using Newtonsoft.Json;
 using PythonNodeModels;
+using static Dynamo.Models.DynamoModel;
+using static Dynamo.ViewModels.SearchViewModel;
 using ISelectable = Dynamo.Selection.ISelectable;
 using WpfResources = Dynamo.Wpf.Properties.Resources;
 
@@ -1807,6 +1809,7 @@ namespace Dynamo.ViewModels
                 // homespace view model, so the RunSettingsControl's bindings
                 // get updated.
                 RaisePropertyChanged("HomeSpaceViewModel");
+                newVm.doit();
             }
             else
             {
