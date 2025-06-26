@@ -324,17 +324,17 @@ namespace Dynamo.MCP
                         arguments.GetProperty("x").GetDouble(),
                         arguments.GetProperty("y").GetDouble(),
                         arguments.TryGetProperty("initialValue", out var val) ? val.GetString() : null),
-                    //"connect_nodes" => DynamoWorkspaceTools.ConnectNodes(
-                    //    arguments.GetProperty("sourceNodeId").GetString()!,
-                    //    arguments.GetProperty("targetNodeId").GetString()!,
-                    //    arguments.TryGetProperty("sourcePortIndex", out var spi) ? spi.GetInt32() : 0,
-                    //    arguments.TryGetProperty("targetPortIndex", out var tpi) ? tpi.GetInt32() : 0),
+                    "connect_nodes" => WorkspaceTools.ConnectNodes(
+                        arguments.GetProperty("sourceNodeId").GetString()!,
+                        arguments.GetProperty("targetNodeId").GetString()!,
+                       arguments.TryGetProperty("sourcePortIndex", out var spi) ? spi.GetInt32() : 0,
+                       arguments.TryGetProperty("targetPortIndex", out var tpi) ? tpi.GetInt32() : 0),
                     //"delete_node" => DynamoWorkspaceTools.DeleteNode(arguments.GetProperty("nodeId").GetString()!),
                     //"get_workspace_info" => DynamoWorkspaceTools.GetWorkspaceInfo(),
                     //"run_graph" => DynamoWorkspaceTools.RunGraph(),
-                    //"set_node_value" => DynamoWorkspaceTools.SetNodeValue(
-                    //    arguments.GetProperty("nodeId").GetString()!,
-                    //    arguments.GetProperty("value").GetString()!),
+                    "set_node_value" => WorkspaceTools.SetNodeValue(
+                        arguments.GetProperty("nodeId").GetString()!,
+                       arguments.GetProperty("value").GetString()!),
                     "get_all_available_nodes" => WorkspaceTools.GetAllAvailableNodes(),
                     _ => "Unknown tool: " + name
                 };
