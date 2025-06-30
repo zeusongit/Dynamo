@@ -461,7 +461,6 @@
   </ItemGroup>
 
   <ItemGroup>
-      <PackageReference Include="Anthropic.SDK" Version="5.4.1" />
       <PackageReference Include="HelixToolkit" Version="2.24.0" />
       <PackageReference Include="HelixToolkit.Core.Wpf" Version="2.24.0" />
       <PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.24.0" />
@@ -576,7 +575,6 @@
     </Compile>
     <Compile Include="UI\Prompts\PortPropertiesEditPrompt.xaml.cs" />
     <Compile Include="Utilities\CerDLL.cs" />
-    <Compile Include="Utilities\ClaudeClient.cs" />
     <Compile Include="Utilities\CompactBubbleHandler.cs" />
     <Compile Include="Interfaces\IShellCom.cs" />
     <Compile Include="Rendering\HelixRenderPackage.cs" />
@@ -687,7 +685,6 @@
     <Compile Include="UI\SharedResourceDictionary.cs" />
     <Compile Include="Utilities\PreferencesPanelUtilities.cs" />
     <Compile Include="Utilities\WebView2Utilities.cs" />
-    <Compile Include="Utilities\WorkspaceTools.cs" />
     <Compile Include="ViewModels\Core\AnnotationExtension.cs" />
     <Compile Include="ViewModels\Core\AnnotationViewModel.cs" />
     <Compile Include="Utilities\ResourceUtilities.cs" />

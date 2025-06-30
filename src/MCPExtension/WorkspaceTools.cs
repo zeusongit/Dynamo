@@ -212,12 +212,9 @@ namespace Dynamo.MCP
             }
 
             // Try to set the node value
-            DynamoModel.OnRequestDispatcherInvoke(() =>
-            {
-                SetNodeValueInternal(node, value);
+            SetNodeValueInternal(node, value);
 
-                node.MarkNodeAsModified(true);
-            });
+            node.MarkNodeAsModified(true);
 
             return $"Set node {nodeId} value to '{value}'";
         }
