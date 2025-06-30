@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -8,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Resources;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -1793,6 +1795,120 @@ namespace Dynamo.ViewModels
             this.ExecuteCommand(command);
         }
 
+        private const string NODE_CACHE_PATH = @"C:\Temp\NodeCache";
+        private const string RESX_PATH = "E:\\rmWorkspace\\GitHub\\Dynamo3\\Dynamo\\src\\DynamoCoreWpf\\Properties\\NodeCacheImages.resx";
+        /// <summary>
+        /// Converts an image file to a base64 string
+        /// </summary>
+        private static string ConvertImageToBase64(string imagePath)
+        {
+            try
+            {
+                using (var bitmap = new System.Drawing.Bitmap(imagePath))
+                using (var memoryStream = new MemoryStream())
+                {
+                    // Save image to memory stream in PNG format
+                    bitmap.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
+
+                    // Convert to base64
+                    byte[] imageBytes = memoryStream.ToArray();
+                    return Convert.ToBase64String(imageBytes);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to convert image to base64: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Adds or updates a base64 image string in the resx file
+        /// </summary>
+        private static void AddToResX(string nodeName, string base64String)
+        {
+            try
+            {
+                // Create a backup of existing resx content
+                var existingEntries = new Dictionary<string, string>();
+                if (File.Exists(RESX_PATH))
+                {
+                    using (var reader = new ResXResourceReader(RESX_PATH))
+                    {
+                        foreach (DictionaryEntry entry in reader)
+                        {
+                            if (entry.Key.ToString() != nodeName) // Skip the one we're updating
+                            {
+                                existingEntries.Add(entry.Key.ToString(), entry.Value.ToString());
+                            }
+                        }
+                    }
+                }
+
+                // Write all entries including the new/updated one
+                using (var writer = new ResXResourceWriter(RESX_PATH))
+                {
+                    // Write the new/updated entry
+                    writer.AddResource(nodeName, base64String);
+
+                    // Write back all other existing entries
+                    foreach (var entry in existingEntries)
+                    {
+                        writer.AddResource(entry.Key, entry.Value);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to add image to resx: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Migrates all PNG files from the node cache directory to the resx file
+        /// </summary>
+        public static void MigrateNodeCacheToResX()
+        {
+            try
+            {
+                if (!Directory.Exists(NODE_CACHE_PATH))
+                {
+                    throw new DirectoryNotFoundException($"Node cache directory not found at {NODE_CACHE_PATH}");
+                }
+
+                // Get all PNG files from node cache
+                var files = Directory.GetFiles(NODE_CACHE_PATH, "*.png");
+                System.Diagnostics.Debug.WriteLine($"Found {files.Length} PNG files to migrate");
+
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        // Get node name from filename
+                        string nodeName = Path.GetFileNameWithoutExtension(file);
+
+                        // Convert image to base64
+                        string base64String = ConvertImageToBase64(file);
+                        if (base64String != null)
+                        {
+                            // Add to resx
+                            AddToResX(nodeName, base64String);
+                            System.Diagnostics.Debug.WriteLine($"Successfully migrated {nodeName}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but continue with next file
+                        System.Diagnostics.Debug.WriteLine($"Failed to migrate {file}: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Migration failed: {ex.Message}");
+                throw; // Rethrow to notify caller of failure
+            }
+        }
         private void WorkspaceAdded(WorkspaceModel item)
         {
             if (item is HomeWorkspaceModel)
@@ -1807,6 +1923,7 @@ namespace Dynamo.ViewModels
                 // homespace view model, so the RunSettingsControl's bindings
                 // get updated.
                 RaisePropertyChanged("HomeSpaceViewModel");
+                //MigrateNodeCacheToResX();
             }
             else
             {
