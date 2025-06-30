@@ -27,7 +27,7 @@ namespace Dynamo.MCP
 
             WorkspaceTools.InitializeFromViewExtension(viewLoadedParams);
 
-            _dynamoModel.Logger.LogInfo("MCP", serverResult);
+            //_dynamoModel.Logger.LogInfo("MCP", serverResult);
 
             this.readyCalled = true;
         }

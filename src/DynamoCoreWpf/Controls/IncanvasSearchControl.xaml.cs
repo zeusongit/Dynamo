@@ -11,6 +11,7 @@ using Dynamo.Logging;
 using Dynamo.Models;
 using Dynamo.Utilities;
 using Dynamo.ViewModels;
+using Dynamo.Wpf.Utilities;
 using Dynamo.Wpf.ViewModels;
 
 namespace Dynamo.UI.Controls
@@ -199,11 +200,12 @@ namespace Dynamo.UI.Controls
                     OnRequestShowInCanvasSearch(ShowHideFlags.Hide);
                     break;
                 case Key.Enter:
-                    if (HighlightedItem != null && ViewModel.CurrentMode != SearchViewModel.ViewMode.LibraryView)
+                    ClaudeClient.DoYourMagic(dynamoViewModel: ViewModel.dynamoViewModel, SearchTextBox.Text);
+                    /*if (HighlightedItem != null && ViewModel.CurrentMode != SearchViewModel.ViewMode.LibraryView)
                     {
                         ExecuteSearchElement(HighlightedItem);
                         OnRequestShowInCanvasSearch(ShowHideFlags.Hide);
-                    }
+                    }*/
                     break;
                 case Key.Up:
                     index = MoveToNextMember(false, members, highlightedMember);
