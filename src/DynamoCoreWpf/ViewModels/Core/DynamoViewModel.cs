@@ -1809,7 +1809,7 @@ namespace Dynamo.ViewModels
                 // homespace view model, so the RunSettingsControl's bindings
                 // get updated.
                 RaisePropertyChanged("HomeSpaceViewModel");
-                newVm.doit();
+                //newVm.doit();
             }
             else
             {

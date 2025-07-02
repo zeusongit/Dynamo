@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Linq;
 using System.Security.RightsManagement;
 using System.Windows;
 using System.Windows.Controls;
@@ -173,7 +174,7 @@ namespace Dynamo.Controls
         {
             get
             {
-                if(_expansionBay == null)
+                if (_expansionBay == null)
                 {
                     _expansionBay = new Canvas()
                     {
@@ -190,7 +191,7 @@ namespace Dynamo.Controls
                 }
 
                 return _expansionBay;
-                        
+
             }
         }
 
@@ -199,7 +200,7 @@ namespace Dynamo.Controls
         {
             get
             {
-                if(_centralGrid == null)
+                if (_centralGrid == null)
                 {
                     _centralGrid = new Grid()
                     {
@@ -231,7 +232,7 @@ namespace Dynamo.Controls
         {
             get
             {
-                if(_presentationGrid == null)
+                if (_presentationGrid == null)
                 {
                     _presentationGrid = new Grid()
                     {
@@ -793,7 +794,7 @@ namespace Dynamo.Controls
             //Todo Can this be adjusted with margin on the stack panel instead?
             //Spacer for embedded resize thumb(visible only on resizable nodes)
             var spacerBorder = new Border
-            {   
+            {
                 Width = 16,
                 Height = 16,
                 Background = Brushes.Transparent,
@@ -919,7 +920,7 @@ namespace Dynamo.Controls
                 Margin = new Thickness(-8),
                 Fill = _darkBlue200,
                 IsHitTestVisible = false,
-                Style = _zoomFadeOpacity_50PercentToZeroStyle 
+                Style = _zoomFadeOpacity_50PercentToZeroStyle
             };
             Grid.SetRow(nodeColorOverlayZoomIn, 1);
             Grid.SetRowSpan(nodeColorOverlayZoomIn, 4);
@@ -1177,7 +1178,7 @@ namespace Dynamo.Controls
 
         private void SetNodeBackgroundHeaderAndPortsVisible()
         {
-            
+
             nodeBackground.Visibility = Visibility.Visible;
             nameBackground.Visibility = Visibility.Visible;
             nodeHeaderContent.Visibility = Visibility.Visible;
@@ -1287,7 +1288,7 @@ namespace Dynamo.Controls
                     new Point(10,0)
                 })
             };
-                
+
             var tooltipPathFigure = new PathFigure()
             {
                 IsClosed = false,
@@ -1435,7 +1436,7 @@ namespace Dynamo.Controls
 
         //Initialize the port arrays
         private static void LoadBmpPorts()
-        {            
+        {
             for (int i = 0; i < bluePixels.Length; i += 4)
             {
                 bluePixels[i + 0] = 231; // Blue
@@ -1577,7 +1578,7 @@ namespace Dynamo.Controls
                 );
 
                 int j = 0;
-                
+
                 foreach (var item in ViewModel.InPorts)
                 {
                     var model = item as InPortViewModel;
@@ -1594,7 +1595,7 @@ namespace Dynamo.Controls
                             0
                         );
                     }
-                    else if(model.PortValueMarkerColor.Color.R == 235)
+                    else if (model.PortValueMarkerColor.Color.R == 235)
                     {
                         writeableBitmap.WritePixels(
                             new Int32Rect(x + 5, y, width, height),
@@ -1618,7 +1619,7 @@ namespace Dynamo.Controls
                         writeableBitmap.WritePixels(
                             new Int32Rect(x, y + 1, width - 1, height - 2),
                             bluePixelsDefault,
-                            (width-1) * bytesPerPixel,
+                            (width - 1) * bytesPerPixel,
                             0
                         );
                     }
@@ -1695,7 +1696,7 @@ namespace Dynamo.Controls
             }
 
             //Add the adjusted Style for CodeBlockNodeModel to add overrides for Measure / Layout
-            if(ViewModel.NodeModel is CodeBlockNodeModel)
+            if (ViewModel.NodeModel is CodeBlockNodeModel)
             {
                 outputPortControl.Margin = new Thickness(0, 12, -24, 0);
                 outputPortControl.Style = _codeBlockNodeItemControlStyle;
@@ -1787,7 +1788,7 @@ namespace Dynamo.Controls
                     return "mul";
                 case "<":
                     return "lt";
-                case "<=":
+                case "<=":  
                     return "le";
                 case ">":
                     return "gt";
@@ -1798,12 +1799,13 @@ namespace Dynamo.Controls
                 case "/":
                     return "div";
                 default:
-                    return ViewModel.DynamoViewModel.GetMinimumQualifiedName(nvm.NodeModel);
+                    return GetNodeQualifiedName(ViewModel.NodeModel);
             }
         }
-        private void OnNodeViewLoaded(object sender, RoutedEventArgs e)
+        private void SaveNodeBitmap(string nname)
         {
-            //Save
+
+
             var width = (int)grid.ActualWidth;
             var height = (int)grid.ActualHeight;
             var bheight = (int)nodeBorder.ActualHeight;
@@ -1813,6 +1815,7 @@ namespace Dynamo.Controls
                 return;
             }
 
+            //this is to trim the top margin from node images
             var sy = height - bheight + 2;
             var sh = bheight - 2;
 
@@ -1844,27 +1847,142 @@ namespace Dynamo.Controls
             var encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(bufferedRtb));
 
-            var cachePath = "C:\\Temp\\NodeCacheNew\\";
-
-            if (!System.IO.Directory.Exists(cachePath))
-            {
-                System.IO.Directory.CreateDirectory(cachePath);
-            }
-            var nname = GetNodeName(ViewModel);
             try
             {
-                
-                if (!System.IO.File.Exists(cachePath + nname + ".png"))
+                using (var stream = new System.IO.FileStream(nname + ".png", System.IO.FileMode.Create))
                 {
-                    using (var stream = new System.IO.FileStream(cachePath + nname + ".png", System.IO.FileMode.Create))
-                    {
-                        encoder.Save(stream);
-                    }
+                    encoder.Save(stream);
                 }
             }
             catch (Exception ex)
             {
                 System.IO.File.AppendAllText("C:\\Temp\\FailedNodes.txt", nname + Environment.NewLine);
+            }
+        }
+
+        //Check for customization
+
+        private bool HasNodeViewCustomization(Type nodeModelType)
+        {
+            // Find the parent DynamoView to access the customization library
+            var dynamoView = WpfUtilities.FindUpVisualTree<DynamoView>(this);
+            if (dynamoView?.nodeViewCustomizationLibrary == null)
+                return false;
+
+            // Check if this node type or any of its base types has customizations
+            var currentType = nodeModelType;
+            while (currentType != null && currentType != typeof(NodeModel))
+            {
+                if (dynamoView.nodeViewCustomizationLibrary.ContainsCustomizationForNodeModel(currentType))
+                    return true;
+                currentType = currentType.BaseType;
+            }
+
+            return false;
+        }
+        internal static string GetNodeNameWithInputs(NodeModel node, string prefix)
+        {
+            var inputNames = node.InPorts.Select(x => x.Name).ToArray();
+            var fullName = $"{prefix}({string.Join(", ", inputNames)})";
+            // Match https://github.com/DynamoDS/Dynamo/blame/master/src/DynamoCore/Search/SearchElements/ZeroTouchSearchElement.cs#L51
+            if (fullName.Length > 250)
+            {
+                //only take first 2 characters from each input
+                var truncatedInputNames = inputNames.Select(name => name.Length >= 2 ?
+                    name.Substring(0, 2) : name).ToArray();
+                fullName = $"{prefix}({string.Join(", ", truncatedInputNames)})";
+            }
+            return fullName;
+        }
+        internal static string GetNodeQualifiedName(NodeModel nodeModel)
+        {
+            string result = string.Empty;
+            switch (nodeModel)
+            {
+                case Graph.Nodes.CustomNodes.Function function:
+                    var category = function.Category;
+                    var name = function.Name;
+                    result = GetNodeNameWithInputs(function, $"{category}.{name}");
+                    break;
+
+                case Graph.Nodes.ZeroTouch.DSFunctionBase dSFunction:
+                    var descriptor = dSFunction.Controller.Definition;
+                    result = GetNodeNameWithInputs(nodeModel, $"{descriptor.QualifiedName}");
+                    break;
+
+                case NodeModel node:
+                    var type = node.GetType();
+                    result = GetNodeNameWithInputs(nodeModel, $"{type.FullName}");
+                    break;
+            }
+
+            if (string.IsNullOrEmpty(result))
+                return result;
+
+            // Define the specific invalid characters to remove
+            char[] invalidChars = { '/', '\\', ':', '*', '?', '"', '<', '>', '|' };
+
+            // Remove each invalid character from the name
+            string sanitizedName = result;
+            foreach (char invalidChar in invalidChars)
+            {
+                sanitizedName = sanitizedName.Replace(invalidChar.ToString(), string.Empty);
+            }
+
+            return sanitizedName;
+        }
+
+        private void OnNodeViewLoaded(object sender, RoutedEventArgs e)
+        {
+            //Save
+            //var cachePathnew = "C:\\Temp\\NodeCacheNew\\";
+            var cachePath = "C:\\Temp\\NodeCacheNew\\";
+
+            //foreach (var ent in ViewModel.DynamoViewModel.Model.SearchModel.Entries)
+            //{
+            //var mqn = ViewModel.DynamoViewModel.GetMinimumQualifiedName(ViewModel.NodeModel);
+            ////check if mqn exist in cachepath
+            //var fname = "misnodes.txt";
+            //var cname = GetNodeName(ViewModel);
+
+            //if (!System.IO.File.Exists(cachePathnew + cname + ".png"))
+            //{
+            //    System.IO.File.AppendAllText("C:\\Temp\\" + fname, cachePathnew + cname + ".png  ");
+            //    if (System.IO.File.Exists(cachePathbetter + mqn + ".png"))
+            //    {
+            //        System.IO.File.AppendAllText("C:\\Temp\\" + fname, cachePathbetter + mqn + ".png");
+            //    }
+            //    System.IO.File.AppendAllText("C:\\Temp\\" + fname, Environment.NewLine);
+            //}
+            
+            
+            
+
+            
+           // }
+
+            if (!System.IO.Directory.Exists(cachePath))
+            {
+                System.IO.Directory.CreateDirectory(cachePath);
+            }
+
+            var nname = GetNodeName(ViewModel);
+            bool hasCustomization = HasNodeViewCustomization(ViewModel.NodeModel.GetType());
+            if (hasCustomization)
+            {
+                //System.IO.File.AppendAllText("C:\\Temp\\CustomNodes.txt", nname + Environment.NewLine);
+                //delete the file from node cache if it exist
+                if (System.IO.File.Exists(cachePath + nname + ".png"))
+                {
+                    //delete it
+                    //System.IO.File.Delete(cachePath + nname + ".png");
+                }
+            }
+
+
+            if (!System.IO.File.Exists(cachePath + nname + ".png"))
+            {
+                SaveNodeBitmap(cachePath + nname);
             }
             // We no longer cache the DataContext (NodeViewModel) here because 
             // OnNodeViewLoaded gets called at a much later time and we need the 
