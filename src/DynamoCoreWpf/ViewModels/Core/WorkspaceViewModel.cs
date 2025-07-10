@@ -29,6 +29,7 @@ using DynamoUtilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ViewModels.Core;
+using static Dynamo.Models.DynamoModel;
 using Function = Dynamo.Graph.Nodes.CustomNodes.Function;
 
 namespace Dynamo.ViewModels
@@ -667,7 +668,32 @@ namespace Dynamo.ViewModels
 
             maxZoomScaleForBitmapCache = (double)(DynamoModel.FeatureFlags?.CheckFeatureFlag<double>("zoom_bitmap_cache_threshold", 0) ?? 0);
         }
+        public void doit()
+        {
+            double xPos = 100;
+            double yPos = 100;
 
+            foreach (var entry in DynamoViewModel.Model.SearchModel.Entries)
+            {
+                try
+                {
+                    if (entry is CustomNodeSearchElement || entry.CreationName.ToLower().Contains("customnode"))
+                    { continue; }
+                    var a = entry.CreateNode();
+                    a.X = xPos;
+                    a.Y = yPos;
+                    Model.AddAndRegisterNode(a);
+
+                    // Offset position for next node
+                    xPos += 200;
+                    yPos += 100;
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
+        }
         private void OnFlagsRetrieved()
         {
             zoomAnimationThresholdFeatureFlagVal = (int)(DynamoModel.FeatureFlags?.CheckFeatureFlag<long>("zoom_opacity_animation_nodenum_threshold", 0) ?? 0);

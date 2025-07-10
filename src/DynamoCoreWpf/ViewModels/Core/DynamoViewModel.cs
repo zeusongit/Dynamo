@@ -1795,8 +1795,8 @@ namespace Dynamo.ViewModels
             this.ExecuteCommand(command);
         }
 
-        private const string NODE_CACHE_PATH = @"C:\Temp\NodeCache";
-        private const string RESX_PATH = "E:\\rmWorkspace\\GitHub\\Dynamo3\\Dynamo\\src\\DynamoCoreWpf\\Properties\\NodeCacheImages.resx";
+        private const string NODE_CACHE_PATH = @"C:\Temp\NodeCacheNew";
+        private const string RESX_PATH = "E:\\rmWorkspace\\GitHub\\Dynamo4\\Dynamo\\src\\DynamoCoreWpf\\Properties\\NodeCacheImages.resx";
         /// <summary>
         /// Converts an image file to a base64 string
         /// </summary>
@@ -1923,7 +1923,7 @@ namespace Dynamo.ViewModels
                 // homespace view model, so the RunSettingsControl's bindings
                 // get updated.
                 RaisePropertyChanged("HomeSpaceViewModel");
-                //MigrateNodeCacheToResX();
+                MigrateNodeCacheToResX();
             }
             else
             {
