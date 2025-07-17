@@ -29,6 +29,7 @@ using EventTrigger = System.Windows.EventTrigger;
 using TextBox = System.Windows.Controls.TextBox;
 using Thickness = System.Windows.Thickness;
 using ModifierKeys = System.Windows.Input.ModifierKeys;
+using System.Diagnostics;
 
 namespace Dynamo.Nodes
 {
@@ -126,6 +127,9 @@ namespace Dynamo.Nodes
 
         private EventHandler _groupContextMenuClosedHandler;
 
+        private static readonly Typeface cachedTypeface = new Typeface(new FontFamily("Trebuchet"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+        private static readonly Dictionary<string, double> groupTextWidthCache = new Dictionary<string, double>();
+
         public AnnotationViewModel ViewModel { get; private set; }
         public static DependencyProperty SelectAllTextOnFocus;
         static AnnotationView()
@@ -140,6 +144,11 @@ namespace Dynamo.Nodes
             _caretUpGreyImage.Freeze();
             _caretUpWhiteImage.Freeze();
             _caretUpHoverImage.Freeze();
+            _warningImage.Freeze();
+            _errorImage.Freeze();
+            _menuGreyImage.Freeze();
+            _menuWhiteImage.Freeze();
+            _menuHoverImage.Freeze();
 
             _primaryCharcoal300.Freeze();
             _midGreyBrush.Freeze();
@@ -191,19 +200,31 @@ namespace Dynamo.Nodes
             });
 
             // Add RowDefinitions
-            AnnotationGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            AnnotationGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            var row1 = new RowDefinition { Height = GridLength.Auto };
+            var row2 = new RowDefinition { Height = new GridLength(1, GridUnitType.Star) };
+            AnnotationGrid.RowDefinitions.Add(row1);
+            AnnotationGrid.RowDefinitions.Add(row2);
 
             // Create and apply the implicit style
             CreateExpanderStyle();
 
-            AnnotationGrid.Children.Add(CreateFrozenButtonZoomedOutGrid());
-            AnnotationGrid.Children.Add(CreatePersistentBorder());
-            AnnotationGrid.Children.Add(CreateSelectionBorder());
-            AnnotationGrid.Children.Add(CreateNodeHoverBorder());
-            AnnotationGrid.Children.Add(CreateGroupExpander());
-            AnnotationGrid.Children.Add(CreateCollapsedAnnotationRectangle());
+            // Create all child elements
+            var frozenButtonGrid = CreateFrozenButtonZoomedOutGrid();
+            var persistentBorder = CreatePersistentBorder();
+            var selectionBorder = CreateSelectionBorder();
+            var nodeHoverBorder = CreateNodeHoverBorder();
+            var groupExpander = CreateGroupExpander();
+            var collapsedAnnotationRect = CreateCollapsedAnnotationRectangle();
 
+            // Add all children to the grid
+            AnnotationGrid.Children.Add(frozenButtonGrid);
+            AnnotationGrid.Children.Add(persistentBorder);
+            AnnotationGrid.Children.Add(selectionBorder);
+            AnnotationGrid.Children.Add(nodeHoverBorder);
+            AnnotationGrid.Children.Add(groupExpander);
+            AnnotationGrid.Children.Add(collapsedAnnotationRect);
+
+            // Register names
             this.RegisterName(groupTextBlock.Name, groupTextBlock);
             this.RegisterName(groupTextBox.Name, groupTextBox);
             this.RegisterName(groupNameControl.Name, groupNameControl);
@@ -2707,6 +2728,15 @@ namespace Dynamo.Nodes
         //Set the max width of text area based on the width of the longest word in the text
         private void SetTextMaxWidth()
         {
+            var text = this.ViewModel.AnnotationText;
+            var margin = this.textBlockGrid.Margin.Right + this.textBlockGrid.Margin.Left;
+
+            if (groupTextWidthCache.TryGetValue(text, out double cachedWidth))
+            {
+                this.ViewModel.AnnotationModel.Width = cachedWidth + margin;
+                this.ViewModel.AnnotationModel.TextMaxWidth = cachedWidth + margin;
+                return;
+            }
             var words = this.ViewModel.AnnotationText.Split(' ');
             var maxLength = 0;
             string longestWord = words[0];
@@ -2721,17 +2751,12 @@ namespace Dynamo.Nodes
             }
 
             var formattedText = new FormattedText(
-                longestWord,
-                System.Globalization.CultureInfo.CurrentUICulture,
-                FlowDirection.LeftToRight,
-                new Typeface(this.groupTextBlock.FontFamily, this.groupTextBlock.FontStyle, this.groupTextBlock.FontWeight, this.groupTextBlock.FontStretch),
-                this.groupTextBlock.FontSize,
-                Brushes.Black);
-
-            var margin = this.textBlockGrid.Margin.Right + this.textBlockGrid.Margin.Left;
+                longestWord, System.Globalization.CultureInfo.CurrentUICulture,
+                FlowDirection.LeftToRight, cachedTypeface, this.groupTextBlock.FontSize, Brushes.Black);
 
             this.ViewModel.AnnotationModel.Width = formattedText.Width + margin;
             this.ViewModel.AnnotationModel.TextMaxWidth = formattedText.Width + margin;
+            groupTextWidthCache[text] = formattedText.Width; // Cache the result
         }
 
         private void SetTextHeight()
