@@ -8064,7 +8064,7 @@ namespace Dynamo.Wpf.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enable New UI.
+        ///   Looks up a localized string similar to Enable Floating Toolbar.
         /// </summary>
         public static string PreferencesViewEnableNodeAutoCompleteNewUI {
             get {
@@ -8073,7 +8073,7 @@ namespace Dynamo.Wpf.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enable the new floating menu for node suggestions for a more streamlined workflow. Turn off to return to the traditional pop-up dialog..
+        ///   Looks up a localized string similar to Enable a floating toolbar for node suggestions for a more streamlined workflow. Turn off to return to the traditional pop-up dialog..
         /// </summary>
         public static string PreferencesViewEnableNodeAutoCompleteNewUITooltipText {
             get {

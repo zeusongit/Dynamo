@@ -67,7 +67,7 @@ namespace Dynamo.Views
         private Point inCanvasSearchPosition;
         private List<DependencyObject> hitResultsList = new List<DependencyObject>();
 
-        static internal event Action<Window, ViewModelBase> RequesNodeAutoCompleteBar;
+        static internal event Action<Window, ViewModelBase> RequestShowNodeAutoCompleteBar;
         private double currentRenderScale = -1;
 
         public WorkspaceViewModel ViewModel
@@ -77,6 +77,13 @@ namespace Dynamo.Views
                 return DataContext as WorkspaceViewModel;
             }
         }
+
+        /// <summary>
+        /// Gets the outer canvas used for overlay elements like context menus and tooltips.
+        /// This canvas is not affected by zoom or pan, so it can be used to place UI elements
+        /// at a fixed screen size regardless of workspace scaling.
+        /// </summary>
+        public Grid OuterCanvas => outerCanvas;
 
         internal bool IsSnappedToPort
         {
@@ -203,7 +210,7 @@ namespace Dynamo.Views
 
         private void ShowNodeAutoCompleteBar(PortViewModel viewModel)
         {
-            RequesNodeAutoCompleteBar?.Invoke(Window.GetWindow(this), viewModel);
+            RequestShowNodeAutoCompleteBar?.Invoke(Window.GetWindow(this), viewModel);
         }
 
         private void ShowHidePortContextMenu(ShowHideFlags flag, PortViewModel portViewModel)
@@ -901,6 +908,11 @@ namespace Dynamo.Views
                 GeoScalingPopup.IsOpen = false;
             
             if(PortContextMenu.IsOpen) DestroyPortContextMenu();
+
+            if (!ViewModel.IsPanning && e.MiddleButton == MouseButtonState.Pressed)
+            {
+                ViewModel.RequestTogglePanMode();
+            }
         }
 
         /// <summary>
@@ -936,6 +948,11 @@ namespace Dynamo.Views
                 // open if workspace is right-clicked itself 
                 // (not node, note, not buttons from viewControlPanel such as zoom, pan and so on)
                 ContextMenuPopup.IsOpen = true;
+            }
+
+            if (ViewModel.IsPanning && e.MiddleButton == MouseButtonState.Released)
+            {
+                ViewModel.RequestTogglePanMode();
             }
         }
 
@@ -1194,6 +1211,12 @@ namespace Dynamo.Views
             }
             ViewModel.InCanvasSearchViewModel.SearchText = string.Empty;
             AddPythonEngineOptions(PythonEngineMenu);
+            //Don't shrink. This prevents the popup menu from jumping when the height of the internal items is reduced.
+            ContextMenuStackView.MinHeight = 0;
+            this.Dispatcher.BeginInvoke(() =>
+            {
+                ContextMenuStackView.MinHeight = ContextMenuStackView.ActualHeight;
+            }, DispatcherPriority.Loaded);
         }
         private void OnContextMenuClosed(object sender, EventArgs e)
         {

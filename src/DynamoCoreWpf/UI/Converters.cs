@@ -1490,6 +1490,26 @@ namespace Dynamo.Controls
         }
     }
 
+    public class ConditionalPackageTextConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values.Length == 2 && values[0] is bool isCustomFunction && values[1] is string packageName)
+            {
+                if (isCustomFunction && !string.IsNullOrEmpty(packageName))
+                {
+                    return "\x0a" + Dynamo.Wpf.Properties.Resources.NodeTooltipPackage + packageName;
+                }
+            }
+            return string.Empty;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     /// <summary>
     /// Evaluates if the value is null and converts it to Visible or Collapsed state
     /// </summary>
@@ -1935,6 +1955,26 @@ namespace Dynamo.Controls
                 return Visibility.Collapsed;
 
             return Visibility.Visible;    
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    /// <summary>
+    /// Hides (collapses) if the zoom level is smaller than or equal to the designated value
+    /// </summary>
+    public class ZoomToInverseVisibilityCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            double number = (double)System.Convert.ChangeType(value, typeof(double));
+
+            if (number <= Configurations.ZoomThreshold)
+                return Visibility.Collapsed;
+            return Visibility.Visible;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -3040,25 +3080,6 @@ namespace Dynamo.Controls
         {
             var mode = (SearchViewModel.ViewMode)value;
             return mode == SearchViewModel.ViewMode.LibraryView;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// <summary>
-    /// Converter is used in WorkspaceView. It makes context menu longer.
-    /// Since context menu includes now inCanvasSearch, it should be align according its' new height.
-    /// </summary>
-    public class WorkspaceContextMenuHeightConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            double actualContextMenuHeight = (double)value;
-
-            return actualContextMenuHeight + Configurations.InCanvasSearchTextBoxHeight;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
