@@ -28,14 +28,14 @@ namespace DynamoCoreWpfTests
         {
             base.Open(path);
 
-            DispatcherUtil.DoEvents();
+            DispatcherUtil.DoEventsLoop();
         }
 
         public override void Run()
         {
             base.Run();
 
-            DispatcherUtil.DoEvents();
+            DispatcherUtil.DoEventsLoop();
         }
 
         protected override void GetLibrariesToPreload(List<string> libraries)
@@ -108,10 +108,10 @@ namespace DynamoCoreWpfTests
         {
             var number = new DoubleInput();
             Model.AddNodeToCurrentWorkspace(number, true);
-            DispatcherUtil.DoEvents();
+            DispatcherUtil.DoEventsLoop();
             var nodeView = NodeViewWithGuid(number.GUID.ToString());
             nodeView.inputGrid.ChildrenOfType<DynamoTextBox>().First().Text = "0..10";
-            DispatcherUtil.DoEvents();
+            DispatcherUtil.DoEventsLoop();
             Assert.IsTrue(number.Value != "0..10");
             Assert.IsTrue(number.Value == "0");
             Assert.IsTrue(number.IsInErrorState);
@@ -123,10 +123,10 @@ namespace DynamoCoreWpfTests
         {
             var number = new DoubleInput();
             Model.AddNodeToCurrentWorkspace(number, true);
-            DispatcherUtil.DoEvents();
+            DispatcherUtil.DoEventsLoop();
             var nodeView = NodeViewWithGuid(number.GUID.ToString());
             nodeView.inputGrid.ChildrenOfType<DynamoTextBox>().First().Text = "start..end";
-            DispatcherUtil.DoEvents();
+            DispatcherUtil.DoEventsLoop();
             Assert.IsTrue(number.Value != "start..end");
             Assert.IsTrue(number.Value == "0");
             Assert.IsTrue(number.IsInErrorState);
@@ -251,7 +251,7 @@ namespace DynamoCoreWpfTests
             Assert.AreEqual(2, eles.Count());
 
             var inputPortControl = nodeView.inputPortControl;
-            Assert.AreEqual(6, inputPortControl.ChildrenOfType<TextBlock>().Count());
+            Assert.AreEqual(3, inputPortControl.ChildrenOfType<TextBlock>().Count());
         }
 
         [Test]
@@ -265,7 +265,7 @@ namespace DynamoCoreWpfTests
             Assert.AreEqual(2, eles.Count());
 
             var inputPortControl = nodeView.inputPortControl;
-            Assert.AreEqual(8, inputPortControl.ChildrenOfType<TextBlock>().Count());
+            Assert.AreEqual(4, inputPortControl.ChildrenOfType<TextBlock>().Count());
         }
 
         [Test]
@@ -304,16 +304,11 @@ namespace DynamoCoreWpfTests
             var nodeView = NodeViewWithGuid("cf3ed4fb-f0a2-4dfe-89c1-11e8bbcfe80d");
                 // NodeViewOf<Dynamo.Nodes.WatchImageCore>();
 
-            var imgs = nodeView.ChildrenOfType<Image>();
+            var imgs = nodeView.PresentationGrid.ChildrenOfType<Image>();
 
-            // Starting from Dynamo 2.13, node view now comes with 
-            // images like node icon, lacing image etc
-            // As of Nov 2024, we have 8 images per NodeView
-            // Images are named for ease of use
-            // As of Dynamo 3.5, the number of images in a node view is 9 after the addition of the TransientImage
-            Assert.AreEqual(9, imgs.Count());
+            Assert.AreEqual(1, imgs.Count());
 
-            var img = imgs.First(x => x.Name == "DotsImage");
+            var img = imgs.First(x => x.Name == "image1");
 
             Assert.Greater(img.ActualWidth, 10);
             Assert.Greater(img.ActualHeight, 10);
@@ -411,7 +406,8 @@ namespace DynamoCoreWpfTests
         {
             var guid0 = Guid.Parse("1a245b04-ad9e-4b9c-8301-730afbd4e6fc");
             var guid1 = Guid.Parse("cece298a-22de-4f4a-a323-fdb04af406a4");
-
+            
+            DispatcherUtil.DoEventsLoop();
             OpenAndRun(@"UI\InvalidValueShouldNotCrashColorRangeNode.dyn");
             var node0 = Model.CurrentWorkspace.Nodes.First(n => n.GUID == guid0);
             var node1 = Model.CurrentWorkspace.Nodes.First(n => n.GUID == guid1);
@@ -419,6 +415,7 @@ namespace DynamoCoreWpfTests
             node1.OnNodeModified(); // Mark node as dirty to trigger an immediate run.
 
             Assert.Pass(); // We should reach here safely without exception.
+            DispatcherUtil.DoEventsLoop();
         }
 
         [Test, Category("DisplayHardwareDependent")]
@@ -463,7 +460,7 @@ namespace DynamoCoreWpfTests
                 DynamoModel.MakeConnectionCommand.Mode.End));
 
             Run();
-            DispatcherUtil.DoEvents();
+            DispatcherUtil.DoEventsLoop();
             tree = nodeView.ChildrenOfType<WatchTree>();
             items = tree.First().treeView1.ChildrenOfType<TextBlock>();
             Assert.AreEqual(8, items.Count());

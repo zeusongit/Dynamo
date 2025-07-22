@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <UILib>true</UILib>
   </PropertyGroup>
@@ -18,7 +18,7 @@
     <PreferredToolArchitecture>x64</PreferredToolArchitecture> 
   </PropertyGroup> 
   <PropertyGroup>
-    <NoWarn>MSB3539;CS1591;NUnit2005;NUnit2007;CS0618;CS0612;CS0672</NoWarn>
+    <NoWarn>MSB3539;CS1591;NUnit2005;NUnit2007;CS0618;CS0612;CS0672;CA1416</NoWarn>
   </PropertyGroup>
 
   <Target Name="NpmRunBuild" BeforeTargets="BeforeBuild">
@@ -59,7 +59,7 @@
 
     <Target Name="NpmRunBuildHomePage" BeforeTargets="BeforeBuild">
         <PropertyGroup>
-            <PackageVersion>1.0.23</PackageVersion>
+            <PackageVersion>1.0.24</PackageVersion>
             <PackageName>DynamoHome</PackageName>
         </PropertyGroup>
         <Exec Command="$(PowerShellCommand) -ExecutionPolicy Bypass -File &quot;$(SolutionDir)pkgexist.ps1&quot; &quot;$(PackageName)&quot; &quot;$(PackageVersion)&quot;" ConsoleToMSBuild="true">
@@ -128,6 +128,8 @@
     </Target>
 
     <ItemGroup>
+    <None Remove="Controls\OutPorts.xaml" />
+    <None Remove="Controls\InPorts.xaml" />
     <None Remove="Packages\PackageManagerWizard\dist\index.html" />
     <None Remove="Controls\Docs\cs-CZ\FileTrustWarningDocumentation.html" />
     <None Remove="Controls\Docs\cs-CZ\NodeAutocompleteDocumentation.html" />
@@ -159,6 +161,9 @@
     <None Remove="Packages\SplashScreen\build\index.html" />
     <None Remove="Packages\DynamoHome\build\index.bundle.js" />
     <None Remove="Packages\DynamoHome\build\index.html" />
+    <None Remove="UI\Images\Annotations\frozen-dark-64px.png" />
+    <None Remove="UI\Images\Annotations\frozen-hover-64px.png" />
+    <None Remove="UI\Images\Annotations\frozen-light-64px.png" />
     <None Remove="UI\Images\Canvas\canvas-button-geometry-scaling.png" />
     <None Remove="UI\Images\caret_down_white_48px.png" />
     <None Remove="UI\Images\caret_up_white_48px.png" />
@@ -166,6 +171,8 @@
     <None Remove="UI\Images\close_16px.png" />
     <None Remove="UI\Images\caret_drop_down.png" />
     <None Remove="UI\Images\error_48px.png" />
+    <None Remove="UI\Images\copy_16px_default.png" />
+    <None Remove="UI\Images\copy_16px_hover.png" />
     <None Remove="UI\Images\file-generic-16px.png" />
     <None Remove="UI\Images\finished_checkmark_30px.png" />
     <None Remove="UI\Images\folder-generic-16px.png" />
@@ -458,10 +465,10 @@
       <PackageReference Include="HelixToolkit.Core.Wpf" Version="2.24.0" />
       <PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.24.0" />
       <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
-      <PackageReference Include="DynamoVisualProgramming.LibG_231_0_0" Version="3.4.0.4510" />
+      <PackageReference Include="DynamoVisualProgramming.LibG_231_0_0" Version="3.6.0.1954" />
     <PackageReference Include="FontAwesome5" Version="2.1.11" />
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" CopyXML="true" />
-    <PackageReference Include="Greg" Version="3.0.2.6533" />
+    <PackageReference Include="Greg" Version="3.0.2.8780" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2478.35" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="RestSharp" Version="112.0.0" />
@@ -489,6 +496,7 @@
     <PackageReference Include="DotNetProjects.Extended.Wpf.Toolkit" Version="5.0.103" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controls\InPorts.xaml.cs" />
     <Compile Include="Controls\InstalledPackagesControl.xaml.cs">
       <DependentUpon>InstalledPackagesControl.xaml</DependentUpon>
     </Compile>
@@ -511,6 +519,7 @@
     <Compile Include="Controls\OutPortContextMenu.xaml.cs">
       <DependentUpon>OutPortContextMenu.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\OutPorts.xaml.cs" />
     <Compile Include="Controls\ParentMenuItem.cs" />
     <Compile Include="Controls\RunSettingsControl.xaml.cs">
       <DependentUpon>RunSettingsControl.xaml</DependentUpon>
@@ -895,6 +904,9 @@
     <Compile Include="Windows\ModelessChildWindow.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\InPorts.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\InstalledPackagesControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -903,16 +915,11 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <None Include="UI\Themes\Modern\InPorts.xaml">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="UI\Themes\Modern\OutPorts.xaml">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <Page Include="Controls\OutPortContextMenu.xaml">
       <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\OutPorts.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UI\Prompts\DynamoMessageBox.xaml">
@@ -1164,6 +1171,9 @@
     <Resource Include="UI\Images\Alignment\align_x_distribute.png" />
     <Resource Include="UI\Images\Alignment\align_y_average.png" />
     <Resource Include="UI\Images\Alignment\align_y_distribute.png" />
+    <Resource Include="UI\Images\Annotations\frozen-dark-64px.png" />
+    <Resource Include="UI\Images\Annotations\frozen-hover-64px.png" />
+    <Resource Include="UI\Images\Annotations\frozen-light-64px.png" />
     <Resource Include="UI\Images\Canvas\canvas-button-geometry-scaling.png" />
     <Resource Include="UI\Images\caret_down_white_48px.png" />
     <Resource Include="UI\Images\caret_drop_down.png" />
@@ -1302,6 +1312,7 @@
     <Resource Include="UI\Images\closetab_hover.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="UI\Images\cluster_32px.png" />
     <Resource Include="UI\Images\gripper-default.png" />
     <Resource Include="UI\Images\gripper-hover.png" />
     <Resource Include="UI\Images\caret-left-disabled.png" />
@@ -1314,6 +1325,8 @@
     <Resource Include="UI\Images\closetab_normal.png" />
     <Resource Include="UI\Images\dynamonotext.png" />
     <Resource Include="UI\Images\error_48px.png" />
+    <Resource Include="UI\Images\copy_16px_default.png" />
+    <Resource Include="UI\Images\copy_16px_hover.png" />
     <Resource Include="UI\Images\file-generic-16px.png" />
     <Resource Include="UI\Images\finished_checkmark_30px.png" />
     <Resource Include="UI\Images\folder-generic-16px.png" />
@@ -2256,19 +2269,19 @@
 		<HTMLControlsZhCNFiles Include="$(SolutionDir)..\doc\distrib\html\zh-CN\Controls\**\*.html" />
 		<HTMLControlsZhTWFiles Include="$(SolutionDir)..\doc\distrib\html\zh-TW\Controls\**\*.html" />
     </ItemGroup>
-    <Copy SourceFiles="@(HTMLControlsEnUSFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\en-US" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsCsCZFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\cs-CZ" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsDeDEFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\de-DE" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsEsESFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\es-ES" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsFrFRFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\fr-FR" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsItITFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\it-IT" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsJaJPFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\ja-JP" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsKoKRFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\ko-KR" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsPlPLFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\pl-PL" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsPtBRFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\pt-BR" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsRuRUFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\ru-RU" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsZhCNFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\zh-CN" SkipUnchangedFiles="True"/>
-	<Copy SourceFiles="@(HTMLControlsZhTWFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\zh-TW" SkipUnchangedFiles="True"/>
+    <Copy SourceFiles="@(HTMLControlsEnUSFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\en-US" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsCsCZFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\cs-CZ" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsDeDEFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\de-DE" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsEsESFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\es-ES" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsFrFRFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\fr-FR" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsItITFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\it-IT" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsJaJPFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\ja-JP" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsKoKRFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\ko-KR" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsPlPLFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\pl-PL" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsPtBRFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\pt-BR" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsRuRUFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\ru-RU" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsZhCNFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\zh-CN" SkipUnchangedFiles="True" />
+	<Copy SourceFiles="@(HTMLControlsZhTWFiles)" DestinationFolder="$(SolutionDir)\DynamoCoreWpf\Controls\Docs\zh-TW" SkipUnchangedFiles="True" />
   </Target>
   <Target Name="CopyDocumentationBrowserHTMLFiles" AfterTargets="CopyGuidedTourHTMLFiles">
     <ItemGroup>
@@ -2393,36 +2406,36 @@
   </Target>
     <Target Name="CopyDocXML" AfterTargets="AfterBuildOps">
       <ItemGroup>
-        <DocXMLFiles Include="$(OutputPath)\en-US\**\*.xml"/>
+        <DocXMLFiles Include="$(OutputPath)\en-US\**\*.xml" />
 	  </ItemGroup>
-	  <Copy SourceFiles="@(DocXMLFiles)" DestinationFolder="$(SolutionDir)..\doc\distrib\xml\en-US" SkipUnchangedFiles="True"/>
+	  <Copy SourceFiles="@(DocXMLFiles)" DestinationFolder="$(SolutionDir)..\doc\distrib\xml\en-US" SkipUnchangedFiles="True" />
     </Target>
     <Target Name="CopyDocXMLAllLanguages" AfterTargets="CopyDocXML">
 	  <ItemGroup>
-	    <DocXMLCsCZFiles Include="$(SolutionDir)..\doc\distrib\xml\cs-CZ\**\*.xml"/>
-	    <DocXMLDeDEFiles Include="$(SolutionDir)..\doc\distrib\xml\de-DE\**\*.xml"/>
-	    <DocXMLEsESFiles Include="$(SolutionDir)..\doc\distrib\xml\es-ES\**\*.xml"/>
-		<DocXMLFrFRFiles Include="$(SolutionDir)..\doc\distrib\xml\fr-FR\**\*.xml"/>
-		<DocXMLItITFiles Include="$(SolutionDir)..\doc\distrib\xml\it-IT\**\*.xml"/>
-		<DocXMLJaJPFiles Include="$(SolutionDir)..\doc\distrib\xml\ja-JP\**\*.xml"/>
-		<DocXMLKoKRFiles Include="$(SolutionDir)..\doc\distrib\xml\ko-KR\**\*.xml"/>
-		<DocXMLPlPLFiles Include="$(SolutionDir)..\doc\distrib\xml\pl-PL\**\*.xml"/>
-		<DocXMLPtBRFiles Include="$(SolutionDir)..\doc\distrib\xml\pt-BR\**\*.xml"/>
-		<DocXMLRuRUFiles Include="$(SolutionDir)..\doc\distrib\xml\ru-RU\**\*.xml"/>
-		<DocXMLZhCNFiles Include="$(SolutionDir)..\doc\distrib\xml\zh-CN\**\*.xml"/>
-		<DocXMLZhTWFiles Include="$(SolutionDir)..\doc\distrib\xml\zh-TW\**\*.xml"/>
+	    <DocXMLCsCZFiles Include="$(SolutionDir)..\doc\distrib\xml\cs-CZ\**\*.xml" />
+	    <DocXMLDeDEFiles Include="$(SolutionDir)..\doc\distrib\xml\de-DE\**\*.xml" />
+	    <DocXMLEsESFiles Include="$(SolutionDir)..\doc\distrib\xml\es-ES\**\*.xml" />
+		<DocXMLFrFRFiles Include="$(SolutionDir)..\doc\distrib\xml\fr-FR\**\*.xml" />
+		<DocXMLItITFiles Include="$(SolutionDir)..\doc\distrib\xml\it-IT\**\*.xml" />
+		<DocXMLJaJPFiles Include="$(SolutionDir)..\doc\distrib\xml\ja-JP\**\*.xml" />
+		<DocXMLKoKRFiles Include="$(SolutionDir)..\doc\distrib\xml\ko-KR\**\*.xml" />
+		<DocXMLPlPLFiles Include="$(SolutionDir)..\doc\distrib\xml\pl-PL\**\*.xml" />
+		<DocXMLPtBRFiles Include="$(SolutionDir)..\doc\distrib\xml\pt-BR\**\*.xml" />
+		<DocXMLRuRUFiles Include="$(SolutionDir)..\doc\distrib\xml\ru-RU\**\*.xml" />
+		<DocXMLZhCNFiles Include="$(SolutionDir)..\doc\distrib\xml\zh-CN\**\*.xml" />
+		<DocXMLZhTWFiles Include="$(SolutionDir)..\doc\distrib\xml\zh-TW\**\*.xml" />
 	  </ItemGroup>
-	  <Copy SourceFiles="@(DocXMLCsCZFiles)" DestinationFolder="$(OutputPath)\cs-CZ\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLDeDEFiles)" DestinationFolder="$(OutputPath)\de-DE\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLEsESFiles)" DestinationFolder="$(OutputPath)\es-ES\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLFrFRFiles)" DestinationFolder="$(OutputPath)\fr-FR\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLItITFiles)" DestinationFolder="$(OutputPath)\it-IT\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLJaJPFiles)" DestinationFolder="$(OutputPath)\ja-JP\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLKoKRFiles)" DestinationFolder="$(OutputPath)\ko-KR\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLPlPLFiles)" DestinationFolder="$(OutputPath)\pl-PL\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLPtBRFiles)" DestinationFolder="$(OutputPath)\pt-BR\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLRuRUFiles)" DestinationFolder="$(OutputPath)\ru-RU\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLZhCNFiles)" DestinationFolder="$(OutputPath)\zh-CN\" SkipUnchangedFiles="True"/>
-	  <Copy SourceFiles="@(DocXMLZhTWFiles)" DestinationFolder="$(OutputPath)\zh-TW\" SkipUnchangedFiles="True"/>
+	  <Copy SourceFiles="@(DocXMLCsCZFiles)" DestinationFolder="$(OutputPath)\cs-CZ\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLDeDEFiles)" DestinationFolder="$(OutputPath)\de-DE\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLEsESFiles)" DestinationFolder="$(OutputPath)\es-ES\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLFrFRFiles)" DestinationFolder="$(OutputPath)\fr-FR\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLItITFiles)" DestinationFolder="$(OutputPath)\it-IT\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLJaJPFiles)" DestinationFolder="$(OutputPath)\ja-JP\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLKoKRFiles)" DestinationFolder="$(OutputPath)\ko-KR\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLPlPLFiles)" DestinationFolder="$(OutputPath)\pl-PL\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLPtBRFiles)" DestinationFolder="$(OutputPath)\pt-BR\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLRuRUFiles)" DestinationFolder="$(OutputPath)\ru-RU\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLZhCNFiles)" DestinationFolder="$(OutputPath)\zh-CN\" SkipUnchangedFiles="True" />
+	  <Copy SourceFiles="@(DocXMLZhTWFiles)" DestinationFolder="$(OutputPath)\zh-TW\" SkipUnchangedFiles="True" />
   </Target>
 </Project>

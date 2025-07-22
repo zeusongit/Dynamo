@@ -123,6 +123,9 @@
   <data name="CannotRemovePackageAssemblyTitle" xml:space="preserve">
     <value>Sestavu není možné aktualizovat</value>
   </data>
+  <data name="DownloadPackageDisabled" xml:space="preserve">
+    <value>Stahování balíčků je v režimu bez sítě zakázáno.</value>
+  </data>
   <data name="InvalidPackageFolderWarning" xml:space="preserve">
     <value>Složka {0} neexistuje.</value>
   </data>

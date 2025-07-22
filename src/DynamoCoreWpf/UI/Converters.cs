@@ -800,6 +800,7 @@ namespace Dynamo.Controls
         public SolidColorBrush ExecutionPreviewBrush { get; set; }
         public SolidColorBrush NoneBrush { get; set; }
         public SolidColorBrush SelectionBrush { get; set; }
+        public SolidColorBrush TransientBrush { get; set; }
 
         public SolidColorBrush HoverBrush { get; set; }
 
@@ -808,6 +809,8 @@ namespace Dynamo.Controls
             var state = (PreviewState)value;
             switch (state)
             {
+                case PreviewState.Transient:
+                    return TransientBrush;
                 case PreviewState.ExecutionPreview:
                     return ExecutionPreviewBrush;
                 case PreviewState.None:
@@ -833,12 +836,15 @@ namespace Dynamo.Controls
         public Color None { get; set; }
         public Color Selection { get; set; }
         public Color Hover { get; set; }
+        public Color Transient { get; set; }
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             var state = (PreviewState)value;
             switch (state)
             {
+                case PreviewState.Transient:
+                    return Transient;
                 case PreviewState.ExecutionPreview:
                     return ExecutionPreview;
                 case PreviewState.None:
@@ -1484,6 +1490,26 @@ namespace Dynamo.Controls
         }
     }
 
+    public class ConditionalPackageTextConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values.Length == 2 && values[0] is bool isCustomFunction && values[1] is string packageName)
+            {
+                if (isCustomFunction && !string.IsNullOrEmpty(packageName))
+                {
+                    return "\x0a" + Dynamo.Wpf.Properties.Resources.NodeTooltipPackage + packageName;
+                }
+            }
+            return string.Empty;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     /// <summary>
     /// Evaluates if the value is null and converts it to Visible or Collapsed state
     /// </summary>
@@ -1762,6 +1788,30 @@ namespace Dynamo.Controls
         }
     }
 
+    /// <summary>
+    /// Used to set the port style of a Code Block node.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ApiDesign",
+        "RS0016:Add public types and members to the declared API",
+        Justification = "Converters are not part of the API")]
+    public class NodeModelToPortStyleConverter : IValueConverter
+    {
+        public Style PortStyle { get; set; }
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            if (value is CodeBlockNodeModel)
+            {
+                return PortStyle;
+            }
+            return DependencyProperty.UnsetValue;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
     public class LacingToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -1905,6 +1955,26 @@ namespace Dynamo.Controls
                 return Visibility.Collapsed;
 
             return Visibility.Visible;    
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    /// <summary>
+    /// Hides (collapses) if the zoom level is smaller than or equal to the designated value
+    /// </summary>
+    public class ZoomToInverseVisibilityCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            double number = (double)System.Convert.ChangeType(value, typeof(double));
+
+            if (number <= Configurations.ZoomThreshold)
+                return Visibility.Collapsed;
+            return Visibility.Visible;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -3010,25 +3080,6 @@ namespace Dynamo.Controls
         {
             var mode = (SearchViewModel.ViewMode)value;
             return mode == SearchViewModel.ViewMode.LibraryView;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// <summary>
-    /// Converter is used in WorkspaceView. It makes context menu longer.
-    /// Since context menu includes now inCanvasSearch, it should be align according its' new height.
-    /// </summary>
-    public class WorkspaceContextMenuHeightConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            double actualContextMenuHeight = (double)value;
-
-            return actualContextMenuHeight + Configurations.InCanvasSearchTextBoxHeight;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -4267,6 +4318,22 @@ namespace Dynamo.Controls
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             return Binding.DoNothing;
+        }
+    }
+
+    public class LengthToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is int length)
+                return length > 0 ? Visibility.Collapsed : Visibility.Visible;
+
+            return Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

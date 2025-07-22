@@ -31,6 +31,7 @@ using Dynamo.Models;
 using Dynamo.PackageManager;
 using Dynamo.PackageManager.UI;
 using Dynamo.Scheduler;
+using Dynamo.Search.SearchElements;
 using Dynamo.Selection;
 using Dynamo.Services;
 using Dynamo.UI;
@@ -226,6 +227,17 @@ namespace Dynamo.ViewModels
             get
             {
                 return DynamoModel.FeatureFlags?.CheckFeatureFlag("IsDNAClusterPlacementEnabled", false) ?? false;
+            }
+        }
+
+        /// <summary>
+        /// Controls if the new DNA Flyout is enabled from preference settings.
+        /// </summary>
+        internal bool IsNewDNAUIEnabled
+        {
+            get
+            {
+                return model.PreferenceSettings.EnableNewNodeAutoCompleteUI;
             }
         }
 
@@ -739,19 +751,29 @@ namespace Dynamo.ViewModels
             // TODO: These are basic input types in Dynamo
             // This should be only served as a temporary default case.
             var queries = new List<string>() { "String", "Number Slider", "Integer Slider", "Number", "Boolean", "Watch", "Watch 3D", "Python Script" };
+            var categories = new List<(string, SearchElementGroup)> { (".List", SearchElementGroup.Create), (".List", SearchElementGroup.Query) };
+
+            var addNodeIfValid = (NodeSearchElement nse) =>
+            {
+                var node = nse != null ? tempSearchViewModel.MakeNodeSearchElementVM(nse) : null;
+                if (node != null)
+                    DefaultAutocompleteCandidates.Add(node.Name, node);
+            };
+
             foreach (var query in queries)
             {
-                var nodeSearchElement = tempSearchViewModel.Model.Entries.FirstOrDefault(n => n.Name == query);
-                if(nodeSearchElement == null)
+                addNodeIfValid(tempSearchViewModel.Model.Entries.FirstOrDefault(n => n.Name == query));
+            }
+
+            foreach(var query in categories)
+            {
+                var categoryNse = tempSearchViewModel.Model.Entries.Where(n => n.FullCategoryName.EndsWith(query.Item1) && n.Group == query.Item2);
+                foreach (var item in categoryNse)
                 {
-                    continue;
-                }
-                var foundNode = tempSearchViewModel.MakeNodeSearchElementVM(nodeSearchElement);
-                if (foundNode != null)
-                {
-                    DefaultAutocompleteCandidates.Add(foundNode.Name, foundNode);
+                    addNodeIfValid(item);
                 }
             }
+
             tempSearchViewModel.Dispose();
         }
 
@@ -1830,17 +1852,35 @@ namespace Dynamo.ViewModels
             RaisePropertyChanged(nameof(LinterIssuesCount));
         }
 
+        /// <summary>
+        /// Adds the path to the list of recent files.
+        /// We don't do anything if the file is already added and is at the first place,
+        /// we move the file to the start of the list if it is already present,
+        /// or add it to the start of the list if it is not present.
+        /// Every other event, except Move will refresh all the recent files.
+        /// </summary>
+        /// <param name="path"></param>
         internal void AddToRecentFiles(string path)
         {
             if (path == null) return;
 
-            if (RecentFiles.Contains(path))
+            var currIdx = RecentFiles.IndexOf(path);
+            if (currIdx == 0) return;
+            else if (currIdx > 0)
             {
-                RecentFiles.Remove(path);
+                RecentFiles.Move(currIdx, 0);
+                return;
             }
 
             RecentFiles.Insert(0, path);
+            UpdateRecentFiles();
+        }
 
+        /// <summary>
+        /// Update recent files list and limits the number of recent files to the maximum number of recent files as set in the preferences.
+        /// </summary>
+        internal void UpdateRecentFiles()
+        {
             int maxNumRecentFiles = Model.PreferenceSettings.MaxNumRecentFiles;
             if (RecentFiles.Count > maxNumRecentFiles)
             {
@@ -2305,6 +2345,7 @@ namespace Dynamo.ViewModels
         {
             try
             {
+                filePath = Model.CurrentWorkspace.FileName;
                 string fileContentsInUse = String.IsNullOrEmpty(filePath) ? fileContents : File.ReadAllText(filePath);
                 if (string.IsNullOrEmpty(fileContentsInUse))
                 {
@@ -2810,12 +2851,12 @@ namespace Dynamo.ViewModels
 
         internal bool CanShowPackageManagerSearch(object parameters)
         {
-            return !model.IsServiceMode;
+            return !model.IsServiceMode && !model.NoNetworkMode;
         }
 
         internal bool CanShowPackageManager(object parameters)
         {
-            return !model.IsServiceMode;
+            return !model.IsServiceMode && !model.NoNetworkMode;
         }
 
         /// <summary>
@@ -4262,6 +4303,45 @@ namespace Dynamo.ViewModels
             File.WriteAllText(fullFileName, stat.ToString());
         }
 
+        internal void DumpNodeIconData(object parameter)
+        {
+            //set to manual run mode to prevent execution of the nodes as wel place them
+            this.HomeSpace.RunSettings.RunType = RunType.Manual;
+
+            string nodesWithoutIconsFileName = String.Format("NodesWithoutIcons_{0}.csv", DateTime.Now.ToString("yyyyMMddHmmss"));
+            string nodesWithoutIconsFullFileName = Path.Combine(Model.PathManager.LogDirectory, nodesWithoutIconsFileName);
+
+            //creating a copy to avoid collection changed exceptions
+            var entriesCopy = Model.SearchModel.Entries.Where(n => n.IsVisibleInSearch).ToList();
+
+            StreamWriter sw = File.CreateText(nodesWithoutIconsFullFileName);
+
+            sw.WriteLine("NODE ASSEMBLY,NODE NAME");
+
+            foreach (var nse in entriesCopy)
+            {
+                var newNode = nse.CreateNode();
+                this.CurrentSpace.AddAndRegisterNode(newNode);
+                var placedNode = this.CurrentSpaceViewModel.Nodes.Last();
+                var imageSource = placedNode.ImageSource;
+
+                //if image source is null, then no icon is found
+                if (imageSource is null)
+                {
+                    sw.WriteLine($"{nse.Assembly},{nse.Name}");
+                }
+                else
+                {
+                    this.Model.ExecuteCommand(new DynamoModel.DeleteModelCommand(placedNode.Id));
+                }
+            }
+
+            sw.Close();
+
+            //alert user to new file location
+            MainGuideManager.CreateRealTimeInfoWindow(string.Format(Resources.NodeIconDataIsDumped, nodesWithoutIconsFullFileName), true);
+        }
+
         private FileInfo GetMatchingDocFromDirectory(string nodeName, string hash, List<string> suffix, DirectoryInfo dir)
         {
             FileInfo matchingFile = null;
@@ -4282,6 +4362,10 @@ namespace Dynamo.ViewModels
         }
 
         internal bool CanDumpNodeHelpData(object obj)
+        {
+            return true;
+        }
+        internal bool CanDumpNodeIconData(object obj)
         {
             return true;
         }

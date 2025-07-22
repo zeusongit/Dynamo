@@ -1,37 +1,40 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Data;
+using System.Windows.Media;
 using Dynamo.Configuration;
 using Dynamo.Engine;
+using Dynamo.Graph;
 using Dynamo.Graph.Connectors;
 using Dynamo.Graph.Nodes;
 using Dynamo.Graph.Nodes.CustomNodes;
 using Dynamo.Graph.Nodes.ZeroTouch;
+using Dynamo.Graph.Workspaces;
 using Dynamo.Logging;
 using Dynamo.Models;
+using Dynamo.NodeAutoComplete.Services;
 using Dynamo.PackageManager;
 using Dynamo.Properties;
 using Dynamo.Search;
 using Dynamo.Search.SearchElements;
+using Dynamo.Selection;
 using Dynamo.Utilities;
+using Dynamo.ViewModels;
+using Dynamo.Wpf.Utilities;
 using Dynamo.Wpf.ViewModels;
 using Greg;
-using J2N.Text;
-using Lucene.Net.Documents;
-using Lucene.Net.QueryParsers.Classic;
-using Lucene.Net.Search;
 using Newtonsoft.Json;
 using ProtoCore.AST.AssociativeAST;
 using ProtoCore.Mirror;
 using ProtoCore.Utils;
 using RestSharp;
-using Dynamo.Wpf.Utilities;
-using Dynamo.ViewModels;
-using System.Reflection;
 
 namespace Dynamo.NodeAutoComplete.ViewModels
 {
@@ -41,15 +44,34 @@ namespace Dynamo.NodeAutoComplete.ViewModels
     public class NodeAutoCompleteBarViewModel : SearchViewModel
     {
         internal PortViewModel PortViewModel { get; set; }
-        private List<NodeSearchElementViewModel> searchElementsCache;
         private string autocompleteMLMessage;
         private string autocompleteMLTitle;
         private bool displayAutocompleteMLStaticPage;
         private bool displayLowConfidence;
         private const string nodeAutocompleteMLEndpoint = "MLNodeAutocomplete";
         private const string nodeClusterAutocompleteMLEndpoint = "MLNodeClusterAutocomplete";
-        private const double minClusterConfidenceScore = 0.1;
+        private const double minClusterConfidenceScore = 0.001;
         private static Assembly dynamoCoreWpfAssembly;
+        private string lastSerializedAddedCluster = null;
+
+        private bool _isSingleAutocomplete;
+        public bool IsInput => PortViewModel.PortType == PortType.Input;
+        public bool SwitchIsEnabled => ResultsLoaded && !IsInput;
+        public bool IsSingleAutocomplete
+        {
+            get => _isSingleAutocomplete || IsInput || !dynamoViewModel.IsDNAClusterPlacementEnabled;
+            set
+            {
+                if (PortViewModel.PortType == PortType.Output && _isSingleAutocomplete != value)
+                {
+                    _isSingleAutocomplete = value;
+                    RaisePropertyChanged(nameof(IsSingleAutocomplete));
+
+                    PopulateAutoComplete();
+                }
+            }
+        }
+        private bool effectiveIsSingle => IsSingleAutocomplete || !IsDisplayingMLRecommendation;
 
         // Lucene search utility to perform indexing operations just for NodeAutocomplete.
         internal LuceneSearchUtility LuceneUtility
@@ -105,27 +127,42 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             }
         }
 
-        private IEnumerable<NodeAutoCompleteClusterResult> clusterResults;
+
+        private IEnumerable<DNADropdownViewModel> dropdownResults;
         /// <summary>
         /// Cluster autocomplete search results.
         /// </summary>
-        public IEnumerable<NodeAutoCompleteClusterResult> ClusterResults
+        internal IEnumerable<DNADropdownViewModel> DropdownResults
         {
             get
             {
-                return clusterResults;
+                return dropdownResults;
             }
             set
             {
-                clusterResults = value;
-                RaisePropertyChanged(nameof(ClusterResults));
+                dropdownResults = value;
+                FilteredView = CollectionViewSource.GetDefaultView(dropdownResults);
+                if (FilteredView != null)
+                {
+                    FilteredView.Filter = FilterLogic;
+                }
+
                 RaisePropertyChanged(nameof(NthofTotal));
                 RaisePropertyChanged(nameof(ResultsLoaded));
-                RaisePropertyChanged(nameof(ConfirmSource));
-                RaisePropertyChanged(nameof(PreviousSource));
-                RaisePropertyChanged(nameof(NextSource));
+                RaisePropertyChanged(nameof(SwitchIsEnabled));
+                RaisePropertyChanged(nameof(HasPrevious));
+                RaisePropertyChanged(nameof(HasNext));
+                RaisePropertyChanged(nameof(FilteredView));
+                RaisePropertyChanged(nameof(HasUnfilteredResults));
             }
         }
+
+        public bool HasUnfilteredResults => DropdownResults != null && DropdownResults.Any();
+
+        /// <summary>
+        /// Return the filter associated currently with dropdown results.
+        /// </summary>
+        public ICollectionView FilteredView { get; set; }
 
         /// <summary>
         /// Return the qualified results from the ML service above preferred confidence threshold
@@ -134,21 +171,92 @@ namespace Dynamo.NodeAutoComplete.ViewModels
         {
             get
             {
-                if (fullResults == null)
+                if (FullResults == null)
                 {
                     return null;
                 }
-                return fullResults.Results.Where(x => double.Parse(x.Probability) * 100 > minClusterConfidenceScore);
+                return FullResults.Results.Where(x => x.Probability > minClusterConfidenceScore);
             }
         }
 
-        public bool ResultsLoaded => ClusterResults != null;
+        public bool ResultsLoaded => DropdownResults != null;
 
-        public bool IsOpen { get; set; }
+        private bool isOpen;
+        public bool IsOpen
+        {
+            get
+            {
+                return isOpen;
+            }
+            set
+            {
+                if (isOpen == value)
+                {
+                    return;
+                }
 
-        private int ClusterResultsCount => ClusterResults == null ? 0 : ClusterResults.Count();
+                isOpen = value;
+                if (isOpen)
+                {
+                    SubscribeWindowEvents();
+                }
+                else
+                {
+                    UnsubscribeWindowEvents();
+                }
+            }
+        }
+
+        private int ClusterResultsCount => FilteredView == null ? 0 : FilteredView.Cast<object>().ToList().Count;
 
         private int selectedIndex = 0;
+
+        private string _searchInput = string.Empty;
+
+        private bool FilterLogic(object item)
+        {
+            var dnaModel = item as DNADropdownViewModel;
+            if (dnaModel != null)
+            {
+                if (dnaModel.Description.IndexOf(SearchInput.Trim(), StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        public string SearchInput
+        {
+            get
+            {
+                return _searchInput;
+            }
+            set
+            {
+                if (_searchInput == value)
+                {
+                    return;
+                }
+
+                _searchInput = value;
+
+                if (FilteredView != null)
+                {
+                    FilteredView.Refresh();
+                }
+                if (FilteredView.Cast<DNADropdownViewModel>().Any())
+                {
+                    SelectedIndex = 0;
+                    RefocusSearchBox?.Invoke();
+                }
+
+                RaisePropertyChanged(nameof(SearchInput));
+            }
+        }
+
         /// <summary>
         /// Selected index of the current cluster autocomplete option
         /// </summary>
@@ -160,33 +268,46 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             }
             set
             {
-                if(selectedIndex != value && value >= 0)
+                if (selectedIndex != value && value >= -1)
                 {
-                    ReAddNode(value);
+                    selectedIndex = value;
+                    if (selectedIndex != -1)
+                    {
+                        AddCluster(selectedIndex);
+                    }
+
+                    RaisePropertyChanged(nameof(SelectedIndex));
+                    RaisePropertyChanged(nameof(NthofTotal));
+                    RaisePropertyChanged(nameof(HasPrevious));
+                    RaisePropertyChanged(nameof(HasNext));
                 }
-                selectedIndex = value;
-                RaisePropertyChanged(nameof(SelectedIndex));
-                RaisePropertyChanged(nameof(NthofTotal));
-                RaisePropertyChanged(nameof(PreviousSource));
-                RaisePropertyChanged(nameof(NextSource));
             }
         }
-
-        private void ReAddNode(int index)
+        bool isDropDownOpen = false;
+        public bool IsDropDownOpen
         {
-            if(fullResults == null)
+            get
             {
-                return;
+                return isDropDownOpen;
             }
-            var results = QualifiedResults.ToList();
-            if(index >=  0 && index  < results.Count)
+            set
             {
-                AddCluster(results[index]);
+                if (isDropDownOpen != value)
+                {
+                    isDropDownOpen = value;
+                    if (value)
+                    {
+                        RefocusSearchBox?.Invoke();
+                    }
+                    RaisePropertyChanged(nameof(IsDropDownOpen));
+                }
             }
         }
 
         internal void ConsolidateTransientNodes()
         {
+            Analytics.TrackEvent(Actions.Select, Categories.NodeAutoCompleteOperations,
+                effectiveIsSingle ? "PlacedResult_NewExperience_Single" : "PlacedResult_NewExperience_Cluster");
             var node = PortViewModel.NodeViewModel;
             var transientNodes = node.WorkspaceViewModel.Nodes.Where(x => x.IsTransient).ToList();
             foreach (var transientNode in transientNodes)
@@ -194,39 +315,37 @@ namespace Dynamo.NodeAutoComplete.ViewModels
                 transientNode.IsTransient = false;
             }
 
-            NodeAutoCompleteUtilities.PostAutoLayoutNodes(node.WorkspaceViewModel.Model, node.NodeModel, transientNodes.Select(x => x.NodeModel), true, true, false, null);
+            //set the last connector to be connected
+            var transientConnectors = node.WorkspaceViewModel.Connectors.Where(c => c.IsTransient).ToList();
+            foreach (var connector in transientConnectors)
+            {
+                connector.IsTransient = false;
+            }
+
+            NodeAutoCompleteUtilities.PostAutoLayoutNodes(node.WorkspaceViewModel.Model, node.NodeModel, transientNodes.Select(x => x.NodeModel), true, true, PortViewModel.PortType, null);
+
+            if (PortViewModel.PortType == PortType.Input)
+            {
+                node.NodeModel.MarkNodeAsModified();
+            }
+
+            node.WorkspaceViewModel.Model.HasUnsavedChanges = true;
+            (node.WorkspaceViewModel.Model as HomeWorkspaceModel)?.MarkNodesAsModifiedAndRequestRun(transientNodes.Select(x => x.NodeModel));
+
+            //add the new items to the undo recorder (this ensures the elements are valid at this point in time before any other manipulation occurs)
+            DynamoModel.RecordUndoModels(node.WorkspaceViewModel.Model, createdClusterItems);
         }
 
         /// <summary>
-        /// Bitmap Source for left caret
+        /// Boolean, true if its possible to select a previous autocomplete option
         /// </summary>
-        public string PreviousSource
-        {
-            get
-            {
-                return selectedIndex == 0 ? "/DynamoCoreWpf;component/UI/Images/caret-left-disabled.png" : "/DynamoCoreWpf;component/UI/Images/caret-left-default.png";
-            }
-        }
+        public bool HasPrevious => selectedIndex > 0;
+
         /// <summary>
-        /// Bitmap Source for right caret
+        /// Boolean, true if its possible to select a next autocomplete option
         /// </summary>
-        public string NextSource
-        {
-            get
-            {
-                return selectedIndex >= ClusterResultsCount - 1 ? "/DynamoCoreWpf;component/UI/Images/caret-right-disabled.png" : "/DynamoCoreWpf;component/UI/Images/caret-right-default.png";
-            }
-        }
-        /// <summary>
-        /// Bitmap Source for confirmation checkmark
-        /// </summary>
-        public string ConfirmSource
-        {
-            get
-            {
-                return ResultsLoaded ? "/DynamoCoreWpf;component/UI/Images/check.png" : "/DynamoCoreWpf;component/UI/Images/check-disabled.png";
-            }
-        }
+        public bool HasNext => selectedIndex < ClusterResultsCount - 1;
+
         /// <summary>
         /// Language agnostic way of showing current result ordinal
         /// </summary>
@@ -290,9 +409,27 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             }
         }
 
-        internal event Action<NodeModel> ParentNodeRemoved;
+        /// <summary>
+        /// Expose IsDNAClusterPlacementEnabled feature flag as readonly in the viewmodel 
+        /// </summary>
+        public bool IsDNAClusterPlacementEnabled
+        {
+            get
+            {
+                return dynamoViewModel.IsDNAClusterPlacementEnabled;
+            }
+        }
 
-        private MLNodeClusterAutoCompletionResponse fullResults;
+        internal event Action<NodeModel> ParentNodeRemoved;
+        internal event Action RefocusSearchBox;
+
+        internal MLNodeClusterAutoCompletionResponse FullResults { private set; get; }
+        private Guid LastRequestGuid;
+
+        /// <summary>
+        /// Service for handling local autocomplete functionality
+        /// </summary>
+        private readonly LocalAutoCompleteService localAutoCompleteService;
 
         /// <summary>
         /// Constructor
@@ -303,6 +440,7 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             // Off load some time consuming operation here
             DefaultResults = dynamoViewModel.DefaultAutocompleteCandidates.Values;
             ServiceVersion = string.Empty;
+            localAutoCompleteService = new LocalAutoCompleteService(dynamoViewModel);
         }
 
         /// <summary>
@@ -317,7 +455,8 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             FilteredResults = new List<NodeSearchElementViewModel>();
             FilteredHighConfidenceResults = new List<NodeSearchElementViewModel>();
             FilteredLowConfidenceResults = new List<NodeSearchElementViewModel>();
-            searchElementsCache = new List<NodeSearchElementViewModel>();
+            SearchInput = string.Empty;
+            lastSerializedAddedCluster = null;
         }
 
         internal MLNodeAutoCompletionRequest GenerateRequestForMLAutocomplete()
@@ -404,7 +543,7 @@ namespace Dynamo.NodeAutoComplete.ViewModels
 
                 if (startNode.Equals(nodeInfo) || endNode.Equals(nodeInfo) || upstreamAndDownstreamNodes.Contains(startNode) || upstreamAndDownstreamNodes.Contains(endNode))
                 {
-                    var startPortName = (startNode is VariableInputNode || startNode is DSVarArgFunction) ? ParseVariableInputPortName(connector.Start.Name): connector.Start.Name;
+                    var startPortName = (startNode is VariableInputNode || startNode is DSVarArgFunction) ? ParseVariableInputPortName(connector.Start.Name) : connector.Start.Name;
                     var endPortName = (endNode is VariableInputNode || endNode is DSVarArgFunction) ? ParseVariableInputPortName(connector.End.Name) : connector.End.Name;
 
                     var connectorRequest = new ConnectionItem
@@ -420,28 +559,12 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             return request;
         }
 
-        internal void ShowNodeAutocompleMLResults()
+        private IEnumerable<SingleResultItem> GetNodeAutocompleMLResults()
         {
             MLNodeAutoCompletionResponse MLresults = null;
 
-            var request = GenerateRequestForMLAutocomplete();
-
-            string jsonRequest = JsonConvert.SerializeObject(request);
-
             // Get results from the ML API.
-            try
-            {
-                MLresults = GetMLNodeAutocompleteResults(jsonRequest);
-            }
-            catch (Exception ex)
-            {
-                dynamoViewModel.Model.Logger.Log("Unable to fetch ML Node autocomplete results: " + ex.Message);
-                DisplayAutocompleteMLStaticPage = true;
-                AutocompleteMLTitle = Resources.LoginNeededTitle;
-                AutocompleteMLMessage = Resources.LoginNeededMessage;
-                Analytics.TrackEvent(Actions.View, Categories.NodeAutoCompleteOperations, "UnabletoFetch");
-                return;
-            }
+            MLresults = GetGenericAutocompleteResult<MLNodeAutoCompletionResponse>(nodeAutocompleteMLEndpoint);
 
             // no results
             if (MLresults == null || MLresults.Results.Count() == 0)
@@ -449,180 +572,97 @@ namespace Dynamo.NodeAutoComplete.ViewModels
                 DisplayAutocompleteMLStaticPage = true;
                 AutocompleteMLTitle = Resources.AutocompleteNoRecommendationsTitle;
                 AutocompleteMLMessage = Resources.AutocompleteNoRecommendationsMessage;
-                Analytics.TrackEvent(Actions.View, Categories.NodeAutoCompleteOperations, "NoRecommendation");
-                return;
+
+                Analytics.TrackEvent(Actions.View, Categories.NodeAutoCompleteOperations, "FallbackToLocalAutocomplete_NewExperience_Single");
+                return localAutoCompleteService.TryGetLocalAutoCompleteResult(PortViewModel.NodeViewModel.NodeModel, PortViewModel.PortModel);
             }
             ServiceVersion = MLresults.Version;
-            var results = new List<NodeSearchElementViewModel>();
+            var results = new List<SingleResultItem>();
 
             var zeroTouchSearchElements = Model.Entries.OfType<ZeroTouchSearchElement>().Where(x => x.IsVisibleInSearch);
             var nodeModelSearchElements = Model.Entries.OfType<NodeModelSearchElement>().Where(x => x.IsVisibleInSearch);
 
             // ML Results are categorized based on the threshold confidence score before displaying. 
-            if (MLresults.Results.Count() > 0)
+            foreach (var result in MLresults.Results)
             {
-                foreach (var result in MLresults.Results)
+                var portName = result.Port != null ? result.Port.Name : string.Empty;
+                var portIndex = result.Port != null ? result.Port.Index : 0;
+
+                // DS Function node
+                if (result.Node.Type.NodeType.Equals(Function.FunctionNode))
                 {
-                    var portName = result.Port != null ? result.Port.Name : string.Empty;
-                    var portIndex = result.Port != null ? result.Port.Index : 0;
+                    NodeSearchElement nodeSearchElement = null;
+                    var element = zeroTouchSearchElements.FirstOrDefault(n => n.Descriptor.MangledName.Equals(result.Node.Type.Id));
 
-                    // DS Function node
-                    if (result.Node.Type.NodeType.Equals(Function.FunctionNode))
+                    if (element != null)
                     {
-                        NodeSearchElement nodeSearchElement = null;
-                        var element = zeroTouchSearchElements.FirstOrDefault(n => n.Descriptor.MangledName.Equals(result.Node.Type.Id));
-
-                        if (element != null)
-                        {
-                            nodeSearchElement = (NodeSearchElement)element.Clone();
-                        }
+                        nodeSearchElement = (NodeSearchElement)element.Clone();
 
                         // Set PortToConnect for each element based on port-index and port-name
-                        if (nodeSearchElement != null)
+                        nodeSearchElement.AutoCompletionNodeElementInfo = new AutoCompletionNodeElementInfo
                         {
-                            nodeSearchElement.AutoCompletionNodeElementInfo = new AutoCompletionNodeElementInfo
-                            {
-                                PortToConnect = portIndex
-                            };
+                            PortToConnect = portIndex
+                        };
 
-                            foreach (var inputParameter in element.Descriptor.Parameters.Select((value, index) => (value, index)))
+                        foreach (var inputParameter in element.Descriptor.Parameters.Select((value, index) => (value, index)))
+                        {
+                            if (inputParameter.value.Name.Equals(portName))
                             {
-                                if (inputParameter.value.Name.Equals(portName))
-                                {
-                                    nodeSearchElement.AutoCompletionNodeElementInfo.PortToConnect = element.Descriptor.Type == FunctionType.InstanceMethod ? inputParameter.index + 1 : inputParameter.index;
-                                    break;
-                                }
+                                nodeSearchElement.AutoCompletionNodeElementInfo.PortToConnect = element.Descriptor.Type == FunctionType.InstanceMethod ? inputParameter.index + 1 : inputParameter.index;
+                                break;
                             }
                         }
 
-                        var viewModelElement = GetViewModelForNodeSearchElement(nodeSearchElement);
+                        var viewModelElement = new SingleResultItem(nodeSearchElement, result.Score);
 
-                        if (viewModelElement != null)
-                        {
-                            viewModelElement.AutoCompletionNodeMachineLearningInfo = new AutoCompletionNodeMachineLearningInfo(true, true, Math.Round(result.Score * 100));
-                            results.Add(viewModelElement);
-                        }
+                        results.Add(viewModelElement);
                     }
-                    // Matching known node types of node-model nodes.
-                    else if (Enum.IsDefined(typeof(NodeModelNodeTypes), result.Node.Type.NodeType))
+                }
+                // Matching known node types of node-model nodes.
+                else if (Enum.IsDefined(typeof(NodeModelNodeTypes), result.Node.Type.NodeType))
+                {
+                    // Retreive assembly name and full name from type id.
+                    var typeInfo = GetInfoFromTypeId(result.Node.Type.Id);
+                    string fullName = typeInfo.FullName;
+                    string assemblyName = typeInfo.AssemblyName;
+                    NodeSearchElement nodeSearchElement = null;
+
+                    var nodesFromAssembly = nodeModelSearchElements.Where(n => Path.GetFileNameWithoutExtension(n.Assembly).Equals(assemblyName));
+                    var element = nodesFromAssembly.FirstOrDefault(n => n.CreationName.Equals(fullName));
+
+                    if (element != null)
                     {
-                        // Retreive assembly name and full name from type id.
-                        var typeInfo = GetInfoFromTypeId(result.Node.Type.Id);
-                        string fullName = typeInfo.FullName;
-                        string assemblyName = typeInfo.AssemblyName;
-                        NodeSearchElement nodeSearchElement = null;
+                        nodeSearchElement = (NodeSearchElement)element.Clone();
 
-                        var nodesFromAssembly = nodeModelSearchElements.Where(n => Path.GetFileNameWithoutExtension(n.Assembly).Equals(assemblyName));
-                        var element = nodesFromAssembly.FirstOrDefault(n => n.CreationName.Equals(fullName));
-
-                        if (element != null)
+                        nodeSearchElement.AutoCompletionNodeElementInfo = new AutoCompletionNodeElementInfo
                         {
-                            nodeSearchElement = (NodeSearchElement)element.Clone();
-                        }
+                            PortToConnect = portIndex
+                        };
 
-                        if (nodeSearchElement != null)
-                        {
-                            nodeSearchElement.AutoCompletionNodeElementInfo = new AutoCompletionNodeElementInfo
-                            {
-                                PortToConnect = portIndex
-                            };
-                        }
-
-                        var viewModelElement = GetViewModelForNodeSearchElement(nodeSearchElement);
-
-                        if (viewModelElement != null)
-                        {
-                            viewModelElement.AutoCompletionNodeMachineLearningInfo = new AutoCompletionNodeMachineLearningInfo(true, true, Math.Round(result.Score * 100));
-                            results.Add(viewModelElement);
-                        }
+                        var viewModelElement = new SingleResultItem(nodeSearchElement, result.Score);
+                        results.Add(viewModelElement);
                     }
                 }
-
-                OrganizeConfidenceSection(results);
-            }
-        }
-
-        /// <summary>
-        /// Compare to low confidence threadhold defined by user can origanize the results into high and low confidence sections.
-        /// </summary>
-        /// <param name="results"></param>
-        internal void OrganizeConfidenceSection(List<NodeSearchElementViewModel> results)
-        {
-            foreach (var result in results)
-            {
-                if (result.AutoCompletionNodeMachineLearningInfo.ConfidenceScore >= dynamoViewModel.PreferenceSettings.MLRecommendationConfidenceLevel)
-                {
-                    FilteredHighConfidenceResults = FilteredHighConfidenceResults.Append(result);
-                }
-                else
-                {
-                    FilteredLowConfidenceResults = FilteredLowConfidenceResults.Append(result);
-                }
-            }
-
-            // Show low confidence section if there are some results under threshold and feature enabled
-            DisplayLowConfidence = FilteredLowConfidenceResults.Any() && dynamoViewModel.PreferenceSettings.HideNodesBelowSpecificConfidenceLevel;
-
-            if (!FilteredHighConfidenceResults.Any())
-            {
-                DisplayAutocompleteMLStaticPage = true;
-                AutocompleteMLTitle = Resources.AutocompleteLowConfidenceTitle;
-                AutocompleteMLMessage = Resources.AutocompleteLowConfidenceMessage;
-                return;
-            }
-
-            // By default, show only the results which are above the threshold
-            FilteredResults = dynamoViewModel.PreferenceSettings.HideNodesBelowSpecificConfidenceLevel ? FilteredHighConfidenceResults : results;
-        }
-
-        private MLNodeAutoCompletionResponse GetMLNodeAutocompleteResults(string requestJSON)
-        {
-            MLNodeAutoCompletionResponse results = null;
-            try
-            {
-                var authProvider = dynamoViewModel.Model.AuthenticationManager.AuthProvider;
-                if (!dynamoViewModel.IsIDSDKInitialized())
-                {
-                    throw new Exception("IDSDK missing or failed initialization.");
-                }
-
-                if (authProvider is IOAuth2AuthProvider oauth2AuthProvider && authProvider is IOAuth2AccessTokenProvider tokenprovider)
-                {
-                    var uri = DynamoUtilities.PathHelper.GetServiceBackendAddress(this, nodeAutocompleteMLEndpoint);
-                    var client = new RestClient(uri);
-                    var request = new RestRequest(string.Empty,Method.Post);
-                    var tkn = tokenprovider?.GetAccessToken();
-                    if (string.IsNullOrEmpty(tkn))
-                    {
-                        throw new Exception("Authentication required.");
-                    }
-                    request.AddHeader("Authorization",$"Bearer {tkn}");
-                    request = request.AddJsonBody(requestJSON);
-                    request.RequestFormat = DataFormat.Json;
-                    RestResponse response = client.Execute(request);
-                    //TODO maybe worth moving to system.text json in phases?
-                    results = JsonConvert.DeserializeObject<MLNodeAutoCompletionResponse>(response.Content);
-                }
-            }
-            catch (Exception ex)
-            {
-                dynamoViewModel.Model.Logger.Log(ex.Message);
-                throw new Exception("Authentication failed.");
             }
 
             return results;
         }
 
-        // Rest API call to get the Node cluster Autocomlete results from the service.
-        internal MLNodeClusterAutoCompletionResponse GetMLNodeClusterAutocompleteResults()
+
+
+        private T GetGenericAutocompleteResult<T>(string endpoint)
         {
-            MLNodeClusterAutoCompletionResponse results = null;
+            var requestDTO = GenerateRequestForMLAutocomplete();
+            var jsonRequest = JsonConvert.SerializeObject(requestDTO);
+
+#if DEBUG
+            dynamoViewModel?.Model?.Logger?.Log(LogMessage.Info($"DNA Request: \n {jsonRequest}"));
+#endif
+
+            T results = default;
             try
             {
-                var MLRequest = GenerateRequestForMLAutocomplete();
-                string jsonRequest = JsonConvert.SerializeObject(MLRequest);
-
-                var authProvider = dynamoViewModel.Model.AuthenticationManager.AuthProvider;
+                var authProvider = dynamoViewModel?.Model?.AuthenticationManager?.AuthProvider;
                 if (!dynamoViewModel.IsIDSDKInitialized())
                 {
                     throw new Exception("IDSDK missing or failed initialization.");
@@ -640,7 +680,7 @@ namespace Dynamo.NodeAutoComplete.ViewModels
                         }
 
 
-                        var uri = DynamoUtilities.PathHelper.GetServiceBackendAddress(dynamoCoreWpfAssembly, nodeClusterAutocompleteMLEndpoint);
+                        var uri = DynamoUtilities.PathHelper.GetServiceBackendAddress(dynamoCoreWpfAssembly, endpoint);
                         var client = new RestClient(uri);
                         var request = new RestRequest(string.Empty, Method.Post);
                         var tkn = tokenprovider?.GetAccessToken();
@@ -653,7 +693,7 @@ namespace Dynamo.NodeAutoComplete.ViewModels
                         request.RequestFormat = DataFormat.Json;
                         RestResponse response = client.Execute(request);
 
-                        results = JsonConvert.DeserializeObject<MLNodeClusterAutoCompletionResponse>(response.Content);
+                        results = JsonConvert.DeserializeObject<T>(response.Content);
                     }
                     catch (Exception ex)
                     {
@@ -680,8 +720,6 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             DisplayAutocompleteMLStaticPage = false;
             IEnumerable<NodeSearchElementViewModel> allResults = FilteredHighConfidenceResults.Concat(FilteredLowConfidenceResults);
             FilteredResults = allResults;
-            // Save the filtered results for search.
-            searchElementsCache = FilteredResults.ToList();
         }
 
         // Full name and assembly name 
@@ -729,359 +767,413 @@ namespace Dynamo.NodeAutoComplete.ViewModels
         /// <summary>
         /// Key function to populate node autocomplete results to display
         /// </summary>
-        internal void PopulateAutoCompleteCandidates()
+        internal IEnumerable<SingleResultItem> GetSingleAutocompleteResults()
         {
-            if (PortViewModel == null) return;
-
-            dynamoViewModel.CurrentSpaceViewModel.Model.NodeRemoved += NodeViewModel_Removed;
-            ResetAutoCompleteSearchViewState();
+            if (PortViewModel == null) return null;
 
             if (IsDisplayingMLRecommendation)
             {
-                ShowNodeAutocompleMLResults();
                 //Tracking Analytics when raising Node Autocomplete with the Recommended Nodes option selected (Machine Learning)
                 Analytics.TrackEvent(
-                    Actions.Show,
+                    Actions.View,
                     Categories.NodeAutoCompleteOperations,
-                    nameof(NodeAutocompleteSuggestion.MLRecommendation));
+                    "MLRecommendation_NewExperience_Single");
+                return GetNodeAutocompleMLResults();
             }
             else
             {
                 //Tracking Analytics when raising Node Autocomplete with the Object Types option selected.
                 Analytics.TrackEvent(
-                    Actions.Show,
+                    Actions.View,
                     Categories.NodeAutoCompleteOperations,
-                    nameof(NodeAutocompleteSuggestion.ObjectType));
+                    "ObjectType_NewExperience_Single");
                 // Only call GetMatchingSearchElements() for object type match comparison
                 var objectTypeMatchingElements = GetMatchingSearchElements().ToList();
                 // If node match searchElements found, use default suggestions. 
                 // These default suggestions will be populated based on the port type.
                 if (!objectTypeMatchingElements.Any())
                 {
-                    PopulateDefaultAutoCompleteCandidates();
+                    return DefaultAutoCompleteCandidates().Select(x => new SingleResultItem(x.Model, 1.0));
                 }
                 else
                 {
-                    FilteredResults = GetViewModelForNodeSearchElements(objectTypeMatchingElements);
+                    return objectTypeMatchingElements.Select(x => new SingleResultItem(x, 1.0));
                 }
             }
-
-            // Save the filtered results for search.
-            searchElementsCache = FilteredResults.ToList();
-        }
-
-        // Delete all transient nodes in the workspace
-        internal void DeleteTransientNodes()
-        {
-            var node = PortViewModel.NodeViewModel;
-            var wsViewModel = node.WorkspaceViewModel;
-
-            var transientNodes = wsViewModel.Nodes.Where(x => x.IsTransient).ToList();
-            if (transientNodes.Any())
-            {
-                dynamoViewModel.Model.ExecuteCommand(new DynamoModel.DeleteModelCommand(transientNodes.Select(x => x.Id)));
-            }
-        }
-
-        // Add Cluster from server result into the workspace
-        internal void AddCluster(ClusterResultItem ClusterResultItem)
-        {
-            NodeViewModel targetNodeFromCluster = null;
-
-            var node = PortViewModel.NodeViewModel;
-            var wsViewModel = node.WorkspaceViewModel;
-
-            DeleteTransientNodes();
-
-            var index = 0;
-            // A map of the cluster result v.s. actual nodes created for node connection look up
-            var clusterMapping = new Dictionary<string, NodeViewModel>();
-            // Convert topology to actual cluster
-            var clusterNodes = ClusterResultItem.Topology.Nodes.ToList();
-            var clusterConnections = ClusterResultItem.Topology.Connections.ToList();
-
-            List<List<NodeItem>> nodeStacks = NodeAutoCompleteUtilities.ComputeNodePlacementHeuristics(clusterConnections, clusterNodes);
-
-            double xoffset = node.X + node.NodeModel.Width;
-            foreach (var nodeStack in nodeStacks)
-            {
-                xoffset += node.NodeModel.Width;
-                foreach(var newNode in nodeStack)
-                {
-                    // Retreive assembly name and node full name from type.id.
-                    var typeInfo = wsViewModel.NodeAutoCompleteSearchViewModel.GetInfoFromTypeId(newNode.Type.Id);
-                    dynamoViewModel.Model.ExecuteCommand(new DynamoModel.CreateNodeCommand(Guid.NewGuid().ToString(), typeInfo.FullName, xoffset, node.NodeModel.Y, false, false));
-                    var nodeFromCluster = wsViewModel.Nodes.LastOrDefault();
-                    nodeFromCluster.IsTransient = true;
-                    nodeFromCluster.IsHidden = true;
-                    clusterMapping.Add(newNode.Id, nodeFromCluster);
-                    // Add the node to the selection to prepare for autolayout later
-                    if (index == ClusterResultItem.EntryNodeIndex)
-                    {
-                        // This is the target node from cluster that should connect to the query node
-                        targetNodeFromCluster = nodeFromCluster;
-                    }
-                    index++;
-                }
-            }
-            using (var undoGroup = wsViewModel.Model.UndoRecorder.BeginActionGroup())
-            {
-                clusterConnections.ForEach(connection =>
-                {
-                    // Connect the nodes    
-                    var sourceNode = clusterMapping[connection.StartNode.NodeId].NodeModel;
-                    var targetNode = clusterMapping[connection.EndNode.NodeId].NodeModel;
-                    // The port index is 1- based (currently a hack and not expected from service)
-                    var sourcePort = sourceNode.OutPorts.FirstOrDefault(p => p.Index == connection.StartNode.PortIndex - 1);
-                    var targetPort = targetNode.InPorts.FirstOrDefault(p => p.Index == connection.EndNode.PortIndex - 1);
-
-                    var connector = ConnectorModel.Make(sourceNode, targetNode, connection.StartNode.PortIndex - 1, connection.EndNode.PortIndex - 1);
-                    if (connector != null && !targetPort.IsConnected)
-                    {
-                        wsViewModel.Model.UndoRecorder.RecordCreationForUndo(connector);
-                    }
-                });
-
-                // Connect the cluster to the original node and port
-                var connector = ConnectorModel.Make(node.NodeModel, targetNodeFromCluster.NodeModel, 0, ClusterResultItem.EntryNodeInPort);
-                if (connector != null && !targetNodeFromCluster.OutPorts.FirstOrDefault().IsConnected)
-                {
-                    wsViewModel.Model.UndoRecorder.RecordCreationForUndo(connector);
-                }
-            }
-
-            //Make connectors invisible ( just like the cluster nodes ) before they get a chance to be drawn.
-            var clusterNodesModel = clusterMapping.Values.ToList();
-            clusterNodesModel.ForEach(nodeInCluster => nodeInCluster?.NodeModel?.AllConnectors?.ToList().ForEach(connector =>
-            {
-                if (connector != null) connector.IsHidden = true;
-            }));
-
-            //Finalizer will make cluster nodes and their connections visible after autolayout has determined their final positions.
-            Action finalizer = () =>
-            {
-                clusterNodesModel.ForEach(nodeInCluster =>
-                {
-                    nodeInCluster.IsHidden = false;
-                    nodeInCluster.NodeModel?.AllConnectors?.ToList().ForEach(connector =>
-                    {
-                        if (connector != null) connector.IsHidden = !PreferenceSettings.Instance.ShowConnector;
-                    });
-                });
-            };
-
-            // AutoLayout should be called after all nodes are connected.
-            NodeAutoCompleteUtilities.PostAutoLayoutNodes(wsViewModel.DynamoViewModel.CurrentSpace, node.NodeModel, clusterNodesModel.Select(x => x.NodeModel), false, false, false, finalizer);
         }
         /// <summary>
         /// Key function to populate node autocomplete results to display
         /// </summary>
-        internal void PopulateClusterAutoComplete()
+        internal MLNodeClusterAutoCompletionResponse GetClusterAutocompleteResults()
+        {
+            Analytics.TrackEvent(Actions.View, Categories.NodeAutoCompleteOperations, "MLRecommendation_NewExperience_Cluster");
+            return GetGenericAutocompleteResult<MLNodeClusterAutoCompletionResponse>(nodeClusterAutocompleteMLEndpoint);
+        }
+
+        // Delete all transient nodes in the workspace
+        private void DeleteTransientNodes()
+        {
+            var node = PortViewModel?.NodeViewModel;
+            var wsViewModel = node?.WorkspaceViewModel;
+
+            var transientNodes = wsViewModel.Nodes.Where(x => x.IsTransient).ToList();
+            var transientConnectors = wsViewModel.Connectors.Where(c => c.IsTransient).ToList();
+
+            if (transientConnectors.Any())
+            {
+                foreach (var connector in transientConnectors)
+                {
+                    connector.ConnectorModel.Delete();
+                    connector.ConnectorModel.Dispose();
+                    wsViewModel.Connectors.Remove(connector);
+                }
+            }
+
+            if (transientNodes.Any())
+            {
+                foreach (var transientNode in transientNodes)
+                {
+                    DynamoSelection.Instance?.Selection?.Remove(transientNode.NodeModel);
+                    wsViewModel.Model.RemoveAndDisposeNode(transientNode.NodeModel);
+                }
+            }
+        }
+
+        internal void DiscardResult()
+        {
+            DeleteTransientNodes();
+
+            Analytics.TrackEvent(Actions.View, Categories.NodeAutoCompleteOperations,
+                effectiveIsSingle ? "Cancelled_NewExperience_Single" : "Cancelled_NewExperience_Cluster");
+        }
+
+
+        internal void AddCluster(int filterredIndex)
+        {
+            var currentFilter = FilteredView.Cast<DNADropdownViewModel>().ToList();
+            var currentItem = filterredIndex >= 0 && filterredIndex < currentFilter.Count ? currentFilter[filterredIndex] : null;
+
+            if (currentItem?.ClusterResultItem != null)
+            {
+                AddCluster(currentItem.ClusterResultItem);
+            }
+        }
+
+        // Add Cluster from server result into the workspace
+        private List<ModelBase> createdClusterItems = new List<ModelBase>();
+        internal void AddCluster(ClusterResultItem clusterResultItem)
+        {
+            createdClusterItems.Clear();
+
+            if (clusterResultItem == null || clusterResultItem.Topology == null)
+                return;
+            var nextCluster = JsonConvert.SerializeObject(clusterResultItem);
+            if (lastSerializedAddedCluster == nextCluster)
+            {
+                return; // Avoid adding the same cluster multiple times when filtered items dont change
+            }
+            lastSerializedAddedCluster = nextCluster;
+
+            var workspaceViewModel = PortViewModel.NodeViewModel.WorkspaceViewModel;
+            var workspaceModel = workspaceViewModel.Model;
+            var dynamoModel = PortViewModel.NodeViewModel.DynamoViewModel.Model;
+            var entryNodeId = clusterResultItem.Topology.Nodes.ElementAtOrDefault(clusterResultItem.EntryNodeIndex)?.Id;
+
+            // Delete any existing transient nodes
+            DeleteTransientNodes();
+
+            // Map to store created nodes for connection lookup
+            var createdNodes = new Dictionary<string, NodeModel>();
+
+            // Create nodes from the cluster topology
+            var offset = PortViewModel.NodeViewModel.X + PortViewModel.NodeViewModel.NodeModel.Width;
+
+            List<List<NodeItem>> nodeStacks = NodeAutoCompleteUtilities.ComputeNodePlacementHeuristics(clusterResultItem.Topology.Connections.ToList(), clusterResultItem.Topology.Nodes.ToList());
+
+            foreach (var nodeStack in nodeStacks)
+            {
+                offset += PortViewModel.NodeViewModel.NodeModel.Width;
+                foreach (var nodeItem in nodeStack)
+                {
+                    var typeInfo = new NodeModelTypeId(nodeItem.Type.Id);
+
+                    NodeModel newNode = dynamoModel.CreateNodeFromNameOrType(Guid.NewGuid(), typeInfo.FullName, true);
+                    
+                    if (newNode != null)
+                    {
+                        newNode.X = offset; // Adjust X position
+                        newNode.Y = PortViewModel.NodeViewModel.NodeModel.Y; // Adjust Y position
+                        workspaceModel.AddAndRegisterNode(newNode);
+                        createdNodes[nodeItem.Id] = newNode;
+                        createdClusterItems.Add(newNode);
+
+                        var newNodeViewModel = workspaceViewModel.Nodes.Last();
+                        newNodeViewModel.IsHidden = true; // Hide the node initially
+                    }
+                }
+            }
+
+            // Connect the cluster to the original node and port
+            if (entryNodeId != null && createdNodes.TryGetValue(entryNodeId, out var entryNode))
+            {
+
+                ConnectorModel entryConnector = null;
+                if (PortViewModel.PortType == PortType.Output)
+                {
+                    var portIndex = clusterResultItem.EntryNodeInPort;
+                    if (entryNode.InPorts.Count > portIndex && !entryNode.InPorts[portIndex].Connectors.Any())
+                    {
+                        entryConnector = ConnectorModel.Make(PortViewModel.NodeViewModel.NodeModel, entryNode, PortViewModel.PortModel.Index, portIndex);
+                    }
+                }
+                else
+                {
+                    var portIndex = clusterResultItem.EntryNodeOutPort;
+                    if (entryNode.OutPorts.Count > portIndex && !entryNode.OutPorts[portIndex].Connectors.Any())
+                    {
+                        // Temporarily disable modification events (only necessary to add nodes to the input)
+                        var oldFlag = PortViewModel.NodeViewModel.NodeModel.RaisesModificationEvents;
+                        try
+                        {
+                            PortViewModel.NodeViewModel.NodeModel.RaisesModificationEvents = false;
+                            entryConnector = ConnectorModel.Make(entryNode, PortViewModel.NodeViewModel.NodeModel, portIndex, PortViewModel.PortModel.Index);
+                        }
+                        finally
+                        {
+                            PortViewModel.NodeViewModel.NodeModel.RaisesModificationEvents = oldFlag;
+                        }
+                    }
+                }
+                if (entryConnector != null)
+                {
+                    entryConnector.IsHidden = true;
+                    var entryConnectorViewModel = workspaceViewModel.Connectors.First(c => c.ConnectorModel.Equals(entryConnector));
+                    entryConnectorViewModel.IsTransient = true;
+                    createdClusterItems.Add(entryConnector);
+                }
+            }
+
+            // Create connections between nodes
+            foreach (var connection in clusterResultItem.Topology.Connections)
+            {
+                if (createdNodes.TryGetValue(connection.StartNode.NodeId, out var sourceNode) &&
+                    createdNodes.TryGetValue(connection.EndNode.NodeId, out var targetNode))
+                {
+                    var sourcePortIndex = connection.StartNode.PortIndex - 1;
+                    var targetPortIndex = connection.EndNode.PortIndex - 1;
+
+                    if (sourceNode.OutPorts.Count > sourcePortIndex && targetNode.InPorts.Count > targetPortIndex)
+                    {
+                        if (!targetNode.InPorts[targetPortIndex].Connectors.Any())
+                        {
+                            var newConnector = ConnectorModel.Make(sourceNode, targetNode, sourcePortIndex, targetPortIndex);
+
+                            if (newConnector != null)
+                            {
+                                newConnector.IsHidden = true; // Hide the connector initially
+                                createdClusterItems.Add(newConnector);
+
+                                // toggle to be transient for preview purposes
+                                var newConnectorViewModel = workspaceViewModel.Connectors.First(c => c.ConnectorModel.Equals(newConnector));
+                                newConnectorViewModel.IsTransient = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Perform auto-layout for the newly added nodes
+            NodeAutoCompleteUtilities.PostAutoLayoutNodes(
+                workspaceViewModel.DynamoViewModel.CurrentSpace,
+                PortViewModel.NodeViewModel.NodeModel,
+                createdNodes.Values,
+                false,
+                false,
+                PortViewModel.PortType,
+                () =>
+                {
+                    // Finalize visibility of nodes and connectors
+                    foreach (var node in createdNodes.Values)
+                    {
+                        var matchingNode = workspaceViewModel.Nodes.FirstOrDefault(n => n.NodeModel.GUID.Equals(node.GUID));
+                        if (matchingNode != null)
+                        {
+                            matchingNode.IsHidden = false;
+                        }
+                        foreach (var connector in node.AllConnectors)
+                        {
+                            connector.IsHidden = !PreferenceSettings.Instance.ShowConnector;
+                        }
+                    }
+                });
+        }
+
+        /// <summary>
+        /// Key function to populate node autocomplete results to display
+        /// </summary>
+        internal void PopulateAutoComplete()
         {
             if (PortViewModel == null) return;
 
-            dynamoViewModel.CurrentSpaceViewModel.Model.NodeRemoved += NodeViewModel_Removed;
             ResetAutoCompleteSearchViewState();
 
-            fullResults = null;
-            SelectedIndex = 0;
+            FullResults = null;
+            if (DropdownResults != null)
+            {
+                DropdownResults = null;
+            }
+
+            //this should run on the UI thread, so thread safety is not a concern
+            LastRequestGuid = Guid.NewGuid();
+            var myRequest = LastRequestGuid;
+            SelectedIndex = -1;
+            RaisePropertyChanged(nameof(IsSingleAutocomplete));//port may have changed between single and cluster autocomplete
+
+            //start a background thread to make the http request
             Task.Run(() =>
             {
-                fullResults = GetMLNodeClusterAutocompleteResults();
-                var comboboxResults = QualifiedResults.Select(x => new NodeAutoCompleteClusterResult { Description = x.Description });
-                dynamoViewModel.UIDispatcher.BeginInvoke(() =>
-                {                    
-                    if (!IsOpen)
+                MLNodeClusterAutoCompletionResponse fullResults = null;
+
+                try
+                {
+                    if (effectiveIsSingle)
                     {
-                        // view dissapeared while the background thread was waiting for the server response.
-                        // Ignore the results are we're no longer interested.
+                        var fullSingleResults = GetSingleAutocompleteResults().ToList();
+                        fullResults = new MLNodeClusterAutoCompletionResponse
+                        {
+                            Version = "0.0",
+                            NumberOfResults = fullSingleResults.Count,
+                            Results = fullSingleResults,
+                        };
+                    }
+                    else
+                    {
+                        fullResults = GetClusterAutocompleteResults();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    dynamoViewModel.Model.Logger.Log("Unable to fetch ML Node autocomplete results: " + ex.Message);
+                    DisplayAutocompleteMLStaticPage = true;
+                    AutocompleteMLTitle = Resources.LoginNeededTitle;
+                    AutocompleteMLMessage = Resources.LoginNeededMessage;
+                    Analytics.TrackEvent(Actions.View, Categories.NodeAutoCompleteOperations,
+                        effectiveIsSingle ? "UnabletoFetch_NewExperience_Single" : "UnabletoFetch_NewExperience_Cluster");
+                    DropdownResults = new List<DNADropdownViewModel>();
+                    IsDropDownOpen = true;
+                    return;
+                }
+
+                dynamoViewModel.UIDispatcher.BeginInvoke(() =>
+                {
+                    if (LastRequestGuid != myRequest)
+                    {
+                        //a newer request came, we're no longer interested in the results of this one
+                        //only latest request has the right to be committed to the UI and internal data structures
                         return;
                     }
-                    
-                    // this runs synchronously on the UI thread, so the UI can't dissapear during execution
-                    ClusterResults = comboboxResults;
-                    if(QualifiedResults.Any())
+                    if (!IsOpen)
                     {
-                        var ClusterResultItem = QualifiedResults.First();
-                        AddCluster(ClusterResultItem);
+                        // view disappeared while the background thread was waiting for the server response.
+                        // Ignore the results as we're no longer interested.
+                        return;
+                    }
+
+                    FullResults = fullResults ?? FullResults;
+
+                    IEnumerable<DNADropdownViewModel> comboboxResults;
+                    if (effectiveIsSingle)
+                    {
+                        var singleResults = FullResults.Results as List<SingleResultItem>;
+                        //getting bitmaps from resources necessarily has to be done in the UI thread
+                        Dictionary<string, ImageSource> dict = [];
+                        foreach (var singleResult in singleResults)
+                        {
+                            if (dict.ContainsKey(singleResult.CreationName))
+                            {
+                                continue;
+                            }
+                            var iconRequest = new IconRequestEventArgs(singleResult.Assembly, singleResult.IconName + Configurations.SmallIconPostfix);
+                            SearchViewModelRequestBitmapSource(iconRequest);
+                            dict[singleResult.CreationName] = iconRequest.Icon;
+                        }
+                        comboboxResults = QualifiedResults.Select(x => new DNADropdownViewModel
+                        {
+                            Description = x.Description,
+                            Parameters = (x as SingleResultItem).Parameters,
+                            SmallIcon = dict[(x as SingleResultItem).CreationName],
+                            ClusterResultItem = x
+                        });
+                    }
+                    else
+                    {
+                        comboboxResults = QualifiedResults.Select(x => new DNADropdownViewModel
+                        {
+                            Description = x.Description,
+                            ClusterResultItem = x
+                            //default icon (cluster) is set in the xaml view
+                        });
+                    }
+                    // this runs synchronously on the UI thread, so the UI can't disappear during execution
+                    DropdownResults = comboboxResults;
+                    if (FilteredView.Cast<DNADropdownViewModel>().Any())
+                    {
+                        SelectedIndex = 0;
+                    }
+                    if (!comboboxResults.Any())
+                    {
+                        Analytics.TrackEvent(Actions.View, Categories.NodeAutoCompleteOperations,
+                            effectiveIsSingle ? "NoRecommendation_NewExperience_Single" : "NoRecommendation_NewExperience_Cluster");
                     }
                 });
             });
-            //Tracking Analytics when raising Node Autocomplete with the Recommended Nodes option selected (Machine Learning)
-            Analytics.TrackEvent(
-                Actions.Show,
-                Categories.NodeAutoCompleteOperations,
-                nameof(NodeAutocompleteSuggestion.MLRecommendation));
-
-            // Save the filtered results for search.
-            searchElementsCache = FilteredResults.ToList();
         }
 
-        internal void PopulateDefaultAutoCompleteCandidates()
+        internal IEnumerable<NodeSearchElementViewModel> DefaultAutoCompleteCandidates()
         {
             if (PortViewModel.PortModel.PortType == PortType.Input)
             {
                 switch (PortViewModel.PortModel.GetInputPortType())
                 {
                     case "int":
-                        FilteredResults = DefaultResults.Where(e => e.Name == "Number Slider" || e.Name == "Integer Slider").ToList();
-                        break;
+                        return DefaultResults.Where(e => e.Name == "Number Slider" || e.Name == "Integer Slider").ToList();
                     case "double":
-                        FilteredResults = DefaultResults.Where(e => e.Name == "Number Slider" || e.Name == "Integer Slider").ToList();
-                        break;
+                        return DefaultResults.Where(e => e.Name == "Number Slider" || e.Name == "Integer Slider").ToList();
                     case "string":
-                        FilteredResults = DefaultResults.Where(e => e.Name == "String").ToList();
-                        break;
+                        return DefaultResults.Where(e => e.Name == "String").ToList();
                     case "bool":
-                        FilteredResults = DefaultResults.Where(e => e.Name == "Boolean").ToList();
-                        break;
+                        return DefaultResults.Where(e => e.Name == "Boolean").ToList();
                     default:
-                        FilteredResults = DefaultResults.Where(e => e.Name == "String" || e.Name == "Number Slider" || e.Name == "Integer Slider" || e.Name == "Number" || e.Name == "Boolean");
-                        break;
+                        return DefaultResults.Where(e => e.Name == "String" || e.Name == "Number Slider" || e.Name == "Integer Slider" || e.Name == "Number" || e.Name == "Boolean");
                 }
             }
             else
             {
-                FilteredResults = DefaultResults.Where(e => e.Name == "Watch" || e.Name == "Watch 3D" || e.Name == "Python Script").ToList();
+                return DefaultResults.Where(e => e.Name == "Watch" || e.Name == "Watch 3D" || e.Name == "Python Script").ToList();
             }
         }
 
-        internal void OnNodeAutoCompleteWindowClosed()
+        private void OnPreferencesChanged()
+        {
+            RaisePropertyChanged(nameof(IsDisplayingMLRecommendation));
+            PopulateAutoComplete();
+        }
+
+        private void SubscribeWindowEvents()
+        {
+            dynamoViewModel.CurrentSpaceViewModel.Model.NodeRemoved += NodeViewModel_Removed;
+            dynamoViewModel.PreferenceSettings.AutocompletePreferencesChanged += OnPreferencesChanged;
+        }
+
+        private void UnsubscribeWindowEvents()
         {
             dynamoViewModel.CurrentSpaceViewModel.Model.NodeRemoved -= NodeViewModel_Removed;
+            dynamoViewModel.PreferenceSettings.AutocompletePreferencesChanged -= OnPreferencesChanged;
         }
 
         internal void NodeViewModel_Removed(NodeModel node)
         {
             ParentNodeRemoved?.Invoke(node);
-        }
-
-        /// <summary>
-        /// Returns a IEnumberable of NodeSearchElementViewModel for respective NodeSearchElements.
-        /// </summary>
-        private IEnumerable<NodeSearchElementViewModel> GetViewModelForNodeSearchElements(List<NodeSearchElement> searchElementsCache)
-        {
-            return searchElementsCache.Select(e =>
-            {
-                var vm = new NodeSearchElementViewModel(e, this);
-                vm.RequestBitmapSource += SearchViewModelRequestBitmapSource;
-                return vm;
-            });
-        }
-
-        /// <summary>
-        /// Returns a NodeSearchElementViewModel for a NodeSearchElement
-        /// </summary>
-        private NodeSearchElementViewModel GetViewModelForNodeSearchElement(NodeSearchElement nodeSearchElement)
-        {
-            if (nodeSearchElement != null)
-            {
-                var vm = new NodeSearchElementViewModel(nodeSearchElement, this);
-                vm.RequestBitmapSource += SearchViewModelRequestBitmapSource;
-                return vm;
-            }
-            return null;
-        }
-
-
-        /// <summary>
-        ///     Performs a search using the given string as query and subset, if provided.
-        /// </summary>
-        /// <returns> Returns a list with a maximum MaxNumSearchResults elements.</returns>
-        /// <param name="search"> The search query </param>
-        internal IEnumerable<NodeSearchElementViewModel> SearchNodeAutocomplete(string search)
-        {
-            if (LuceneUtility != null)
-            {
-                //The DirectoryReader and IndexSearcher have to be assigned after commiting indexing changes and before executing the Searcher.Search() method, otherwise new indexed info won't be reflected
-                LuceneUtility.dirReader = LuceneUtility.writer?.GetReader(applyAllDeletes: true);
-                if (LuceneUtility.dirReader == null) return null;
-
-                LuceneUtility.Searcher = new IndexSearcher(LuceneUtility.dirReader);
-
-                string searchTerm = search.Trim();
-                var candidates = new List<NodeSearchElementViewModel>();
-                var parser = new MultiFieldQueryParser(LuceneConfig.LuceneNetVersion, LuceneConfig.NodeIndexFields, LuceneUtility.Analyzer)
-                {
-                    AllowLeadingWildcard = true,
-                    DefaultOperator = LuceneConfig.DefaultOperator,
-                    FuzzyMinSim = LuceneConfig.MinimumSimilarity
-                };
-
-                Query query = parser.Parse(LuceneUtility.CreateSearchQuery(LuceneConfig.NodeIndexFields, searchTerm));
-                TopDocs topDocs = LuceneUtility.Searcher.Search(query, n: LuceneConfig.DefaultResultsCount);
-
-                for (int i = 0; i < topDocs.ScoreDocs.Length; i++)
-                {
-                    // read back a Lucene doc from results
-                    Document resultDoc = LuceneUtility.Searcher.Doc(topDocs.ScoreDocs[i].Doc);
-
-                    string name = resultDoc.Get(nameof(LuceneConfig.NodeFieldsEnum.Name));
-                    string docName = resultDoc.Get(nameof(LuceneConfig.NodeFieldsEnum.DocName));
-                    string cat = resultDoc.Get(nameof(LuceneConfig.NodeFieldsEnum.FullCategoryName));
-                    string parameters = resultDoc.Get(nameof(LuceneConfig.NodeFieldsEnum.Parameters));
-
-
-                    var foundNode = FindViewModelForNodeNameAndCategory(name, cat, parameters);
-                    if (foundNode != null)
-                    {
-                        candidates.Add(foundNode);
-                    }
-                }
-
-                return candidates;
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Filters the matching node search elements based on user input in the search field. 
-        /// </summary>
-        internal void SearchAutoCompleteCandidates(string input)
-        {
-            if (PortViewModel == null) return;
-
-            if (searchElementsCache.Any())
-            {
-                if (string.IsNullOrEmpty(input))
-                {
-                    FilteredResults = searchElementsCache;
-                }
-                else
-                {
-                    LuceneSearch.LuceneUtilityNodeAutocomplete = new LuceneSearchUtility(dynamoViewModel.Model, LuceneSearchUtility.DefaultStartConfig);
-
-                    //Memory indexing process for Node Autocomplete (indexing just the nodes returned by the NodeAutocomplete service so we limit the scope of the query search)
-                    var doc = LuceneUtility.InitializeIndexDocumentForNodes();
-                    List<NodeSearchElement> nodeSearchElements = [.. searchElementsCache.Select(x => x.Model)];
-                    LuceneUtility.AddNodeTypeToSearchIndex(nodeSearchElements, doc);
-
-                    //Write the Lucene documents to memory
-                    LuceneUtility.CommitWriterChanges();
-                        
-                    var luceneResults = SearchNodeAutocomplete(input);
-                    var foundNodesModels = luceneResults.Select(x => x.Model);
-                    var foundNodes = foundNodesModels.Select(MakeNodeSearchElementVM);
-
-                    var filteredSearchElements = new List<NodeSearchElementViewModel>();
-
-                    foreach (var node in foundNodes)
-                    {
-                        var matchingElement = searchElementsCache.FirstOrDefault(x => x.FullName.Equals(node.FullName));
-
-                        if (matchingElement != null)
-                        {
-                            node.AutoCompletionNodeMachineLearningInfo = new AutoCompletionNodeMachineLearningInfo(matchingElement.AutoCompletionNodeMachineLearningInfo.DisplayIcon,
-                                                                                                                   matchingElement.AutoCompletionNodeMachineLearningInfo.IsByRecommendation,
-                                                                                                                   matchingElement.AutoCompletionNodeMachineLearningInfo.ConfidenceScore);
-                            filteredSearchElements.Add(node);
-                        }
-                    }
-                    FilteredResults = new List<NodeSearchElementViewModel>(filteredSearchElements).OrderBy(x => x.Name).ThenBy(x => x.Description);
-
-                    LuceneUtility.DisposeWriter();
-                }
-            }
         }
 
         /// <summary>
@@ -1129,9 +1221,9 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             ParseResult parseResult = null;
             try
             {
-                parseResult = ParserUtils.ParseWithCore($"dummyName:{ portType};", core);
+                parseResult = ParserUtils.ParseWithCore($"dummyName:{portType};", core);
             }
-            catch(ProtoCore.BuildHaltException)
+            catch (ProtoCore.BuildHaltException)
             { }
 
             var ast = parseResult?.CodeBlockNode.Children().FirstOrDefault() as IdentifierNode;
@@ -1205,7 +1297,7 @@ namespace Dynamo.NodeAutoComplete.ViewModels
             elements.Sort(comparer);
             //then sort by node library group (create, action, or query node)
             //this results in a list of elements with 3 major groups(create,action,query), each group is sub sorted into types and then sorted by name.
-            return elements.OrderBy(x => x.Group).ThenBy(x => x.OutputParameters.FirstOrDefault().ToString()).ThenBy(x => x.Name);           
+            return elements.OrderBy(x => x.Group).ThenBy(x => x.OutputParameters.FirstOrDefault().ToString()).ThenBy(x => x.Name);
         }
 
         /// <summary>
@@ -1292,7 +1384,7 @@ namespace Dynamo.NodeAutoComplete.ViewModels
                 else
                 {
                     //if inputPortType is an array, lets just use the class name to match 
-                    xTypeNames = xTypeNames.Select(type => (ParserUtils.ParseWithCore($"dummyName:{ type};", core).
+                    xTypeNames = xTypeNames.Select(type => (ParserUtils.ParseWithCore($"dummyName:{type};", core).
                     CodeBlockNode.Children().ElementAt(0) as TypedIdentifierNode).datatype.Name);
                 }
                 if (y is ZeroTouchSearchElement yzt)
@@ -1302,7 +1394,7 @@ namespace Dynamo.NodeAutoComplete.ViewModels
                 // for non ZT nodes, we don't have concrete return types, so we need to parse the typename. 
                 else
                 {
-                    yTypeNames = yTypeNames.Select(type => (ParserUtils.ParseWithCore($"dummyName:{ type};", core).
+                    yTypeNames = yTypeNames.Select(type => (ParserUtils.ParseWithCore($"dummyName:{type};", core).
                     CodeBlockNode.Children().ElementAt(0) as TypedIdentifierNode).datatype.Name);
                 }
 
@@ -1391,7 +1483,6 @@ namespace Dynamo.NodeAutoComplete.ViewModels
                 //if we can't find a match then dist should indicate that.
                 return int.MaxValue;
             }
-
         }
     }
 }
