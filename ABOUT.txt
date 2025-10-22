@@ -4,7 +4,7 @@ Dynamo License
 
 Those portions created by Ian are provided with the following copyright:
 
-Copyright$12025 Ian Keough
+Copyright 2017 Ian Keough
 
 Those portions created by Autodesk employees are provided with the following copyright:
 
@@ -714,7 +714,7 @@ HarfBuzzSharp v.2.8.2.4-preview.84
 HarfBuzzSharp.NativeAssets.macOS v.2.8.2.4-preview.84
 HarfBuzzSharp.NativeAssets.Win32 v.2.8.2.4-preview.84
 Copyright (c) 2015-2016 Xamarin, Inc.
-Copyright$12025-2018 Microsoft Corporation.
+Copyright (c) 2017-2018 Microsoft Corporation.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -729,7 +729,7 @@ SkiaSharp.NativeAssets.Win32 v.2.88.6
 SkiaSharp.Views.Desktop.Common v.2.88.6
 SkiaSharp.Views.WPF v.2.88.6
 Copyright (c) 2015-2016 Xamarin, Inc.
-Copyright$12025-2018 Microsoft Corporation.
+Copyright (c) 2017-2018 Microsoft Corporation.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -769,7 +769,7 @@ JUnitTestLogger v.1.1.0
 MIT License
 https://github.com/syncromatics/JUnitTestLogger/blob/master/LICENSE
 
-Copyright$12025 GMV Syncromatics Engineering
+Copyright (c) 2017 GMV Syncromatics Engineering
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -793,7 +793,7 @@ JunitXml.TestLogger v.3.0.124
 MIT License
 https://github.com/spekt/junit.testlogger/blob/master/LICENSE.md
 
-Copyright$12025-2018
+Copyright (c) 2017-2018
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
