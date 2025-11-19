@@ -37,11 +37,6 @@ namespace Dynamo.Models.Migration.Python
         public readonly HashSet<Guid> PermMigratedCustomDefs = new HashSet<Guid>();
 
         /// <summary>
-        /// Custom node workspaces touched during this session
-        /// </summary>
-        public readonly HashSet<WorkspaceModel> TouchedCustomWorkspaces = new HashSet<WorkspaceModel>();
-
-        /// <summary>
         /// Custom node definition IDs for which a toast/notice has already been shown
         /// </summary>
         public readonly HashSet<Guid> CustomToastShownDef = new HashSet<Guid>();
@@ -128,20 +123,43 @@ namespace Dynamo.Models.Migration.Python
         /// Commits migration changes for custom-node workspaces by editing the .dyf JSON in place:
         /// switches Python nodes from CPython3 to PythonNet3 and saves a backup file
         /// </summary>
-        public void CommitCustomNodeMigrationsOnSave()
+        public void CommitCustomNodeMigrationsOnSave(WorkspaceModel hostWorkspace)
         {
-            foreach (var workspace in TouchedCustomWorkspaces.ToList())
+            if (hostWorkspace == null) return;
+
+            var activeDefIds = hostWorkspace.Nodes
+                .OfType<Dynamo.Graph.Nodes.CustomNodes.Function>()
+                .Select(f => f.Definition?.FunctionId ?? Guid.Empty)
+                .Where(id => id != Guid.Empty)
+                .ToList();
+
+            if (activeDefIds.Count == 0) return;
+
+            var defToCommit = TempMigratedCustomDefs
+                .Where(id => activeDefIds.Contains(id))
+                .ToList();
+
+            if (defToCommit.Count == 0) return;
+
+            foreach (var defId in defToCommit)
             {
                 try
                 {
-                    if (!TryGetCustomIdAndPath(workspace, out var defId, out var dyfPath) || string.IsNullOrEmpty(dyfPath)) continue;
+                    var cws = this.TryGetFunctionWorkspace(dynamoModel, defId) as CustomNodeWorkspaceModel;
+                    if (cws == null) continue;
 
-                    SaveCustomNodeBackup(workspace, dyfPath, PythonServices.PythonEngineManager.CPython3EngineName);
+                    if (!TryGetCustomIdAndPath(cws, out var resolvedDefId, out var dyfPath)
+                        || string.IsNullOrEmpty(dyfPath)) continue;
+
+                    SaveMigrationBackup(
+                        cws,
+                        dyfPath,
+                        PythonServices.PythonEngineManager.CPython3EngineName);
 
                     var upgraded = SwitchDyfPythonEngineInPlace(
-                        dyfPath,
-                        PythonServices.PythonEngineManager.CPython3EngineName,
-                        PythonServices.PythonEngineManager.PythonNet3EngineName);
+                       dyfPath,
+                       PythonServices.PythonEngineManager.CPython3EngineName,
+                       PythonServices.PythonEngineManager.PythonNet3EngineName);
 
                     if (upgraded)
                     {
@@ -159,7 +177,7 @@ namespace Dynamo.Models.Migration.Python
         /// <summary>
         /// Build a backup file path for a .dyn or .dyf backup
         /// </summary>
-        public string BuildDynBackupFilePath(WorkspaceModel workspace, string token)
+        public string BuildBackupFilePath(WorkspaceModel workspace, string token)
         {
             if (workspace == null || pathManager == null) return null;
             if (DynamoModel.IsTestMode) return null;
@@ -177,42 +195,26 @@ namespace Dynamo.Models.Migration.Python
         }
 
         /// <summary>
-        /// Save a .dyn backup of the given workspace with the given token.
-        /// </summary>
-        public string SaveGraphBackup(WorkspaceModel workspace, string token)
-        {
-            var path = BuildDynBackupFilePath(workspace, token);
-            if (string.IsNullOrEmpty(path)) return null;
-
-            try
-            {
-                workspace.Save(path, true);
-                return path;
-            }
-            catch (Exception ex)
-            {
-                this.dynamoModel?.Logger?.Log(ex);
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Save a .dyf backup of the given custom node workspace before engine upgrade.
         /// </summary>
-        private string SaveCustomNodeBackup(WorkspaceModel workspace, string sourcePath, string token) 
+        internal void SaveMigrationBackup(WorkspaceModel workspace, string sourcePath, string token) 
         {
-            var backupPath = BuildDynBackupFilePath(workspace, token);
-            if (string.IsNullOrEmpty(backupPath)) return null;
+            var backupPath = BuildBackupFilePath(workspace, token);
+            if (string.IsNullOrEmpty(backupPath)) return;
 
             try
             {
+                var dir = Path.GetDirectoryName(backupPath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
                 File.Copy(sourcePath, backupPath);
-                return backupPath;
             }
             catch (Exception ex)
             {
                 this.dynamoModel?.Logger?.Log(ex);
-                return null;
             }
         }
 
