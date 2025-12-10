@@ -6042,3 +6042,10 @@ virtual Dynamo.Wpf.ViewModels.Watch3D.DefaultWatch3DViewModel.ZoomToFit(object p
 virtual Dynamo.Wpf.ViewModels.Watch3D.HelixWatch3DViewModel.OnWatchExecution() -> void
 virtual Dynamo.Wpf.ViewModels.Watch3D.HelixWatch3DViewModel.UpdateUpstream() -> void
 virtual UI.Prompts.PortPropertiesEditPrompt.OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e) -> void
+Dynamo.Wpf.Clipboard.WpfClipboardService
+Dynamo.Wpf.Clipboard.WpfClipboardService.CopyToSystemClipboard(Dynamo.Core.Clipboard.ClipboardData clipboardData) -> void
+Dynamo.Wpf.Clipboard.WpfClipboardService.DynamoClipboardFormatName -> string
+Dynamo.Wpf.Clipboard.WpfClipboardService.GetFromSystemClipboard() -> Dynamo.Core.Clipboard.ClipboardData
+Dynamo.Wpf.Clipboard.WpfClipboardService.GetRawClipboardJson() -> string
+Dynamo.Wpf.Clipboard.WpfClipboardService.HasDynamoClipboardData() -> bool
+Dynamo.Wpf.Clipboard.WpfClipboardService.WpfClipboardService(Dynamo.Core.Clipboard.ClipboardSerializer serializer, Dynamo.Logging.ILogger logger) -> void

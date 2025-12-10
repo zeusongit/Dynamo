@@ -3195,3 +3195,140 @@ virtual Dynamo.Search.SearchElements.NodeSearchElement.GenerateOutputParameters(
 virtual Dynamo.Search.SearchElements.NodeSearchElement.OnItemProduced(Dynamo.Graph.Nodes.NodeModel obj) -> void
 virtual Dynamo.Search.SearchElements.SearchElementBase.CreationName.get -> string
 virtual Dynamo.Search.SearchElements.SearchElementBase.CreationName.get -> string
+Dynamo.Core.Clipboard.ClipboardAnnotationData
+Dynamo.Core.Clipboard.ClipboardAnnotationData.Background.get -> string
+Dynamo.Core.Clipboard.ClipboardAnnotationData.Background.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.ClipboardAnnotationData() -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.DescriptionText.get -> string
+Dynamo.Core.Clipboard.ClipboardAnnotationData.DescriptionText.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.FontSize.get -> double
+Dynamo.Core.Clipboard.ClipboardAnnotationData.FontSize.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.GroupStyleId.get -> System.Guid
+Dynamo.Core.Clipboard.ClipboardAnnotationData.GroupStyleId.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.HasNestedGroups.get -> bool
+Dynamo.Core.Clipboard.ClipboardAnnotationData.HasNestedGroups.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.HeightAdjustment.get -> double
+Dynamo.Core.Clipboard.ClipboardAnnotationData.HeightAdjustment.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.Id.get -> string
+Dynamo.Core.Clipboard.ClipboardAnnotationData.Id.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.IsExpanded.get -> bool
+Dynamo.Core.Clipboard.ClipboardAnnotationData.IsExpanded.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.IsOptionalInPortsCollapsed.get -> bool
+Dynamo.Core.Clipboard.ClipboardAnnotationData.IsOptionalInPortsCollapsed.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.IsUnconnectedOutPortsCollapsed.get -> bool
+Dynamo.Core.Clipboard.ClipboardAnnotationData.IsUnconnectedOutPortsCollapsed.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.Nodes.get -> System.Collections.Generic.List<string>
+Dynamo.Core.Clipboard.ClipboardAnnotationData.Nodes.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.Title.get -> string
+Dynamo.Core.Clipboard.ClipboardAnnotationData.Title.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.UserSetHeight.get -> double
+Dynamo.Core.Clipboard.ClipboardAnnotationData.UserSetHeight.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.UserSetWidth.get -> double
+Dynamo.Core.Clipboard.ClipboardAnnotationData.UserSetWidth.set -> void
+Dynamo.Core.Clipboard.ClipboardAnnotationData.WidthAdjustment.get -> double
+Dynamo.Core.Clipboard.ClipboardAnnotationData.WidthAdjustment.set -> void
+Dynamo.Core.Clipboard.ClipboardData
+Dynamo.Core.Clipboard.ClipboardData.Annotations.get -> System.Collections.Generic.List<Dynamo.Core.Clipboard.ClipboardAnnotationData>
+Dynamo.Core.Clipboard.ClipboardData.Annotations.set -> void
+Dynamo.Core.Clipboard.ClipboardData.ClipboardData() -> void
+Dynamo.Core.Clipboard.ClipboardData.ClipboardFormatId -> string
+Dynamo.Core.Clipboard.ClipboardData.Connectors.get -> System.Collections.Generic.List<object>
+Dynamo.Core.Clipboard.ClipboardData.Connectors.set -> void
+Dynamo.Core.Clipboard.ClipboardData.Dependencies.get -> System.Collections.Generic.List<Dynamo.Core.Clipboard.ClipboardDependencyData>
+Dynamo.Core.Clipboard.ClipboardData.Dependencies.set -> void
+Dynamo.Core.Clipboard.ClipboardData.ElementResolver.get -> object
+Dynamo.Core.Clipboard.ClipboardData.ElementResolver.set -> void
+Dynamo.Core.Clipboard.ClipboardData.Nodes.get -> System.Collections.Generic.List<object>
+Dynamo.Core.Clipboard.ClipboardData.Nodes.set -> void
+Dynamo.Core.Clipboard.ClipboardData.ConnectorPins.get -> System.Collections.Generic.List<Dynamo.Core.Clipboard.ClipboardConnectorPinData>
+Dynamo.Core.Clipboard.ClipboardData.ConnectorPins.set -> void
+Dynamo.Core.Clipboard.ClipboardData.NodeViews.get -> System.Collections.Generic.List<Dynamo.Core.Clipboard.ClipboardNodeViewData>
+Dynamo.Core.Clipboard.ClipboardData.NodeViews.set -> void
+Dynamo.Core.Clipboard.ClipboardData.Notes.get -> System.Collections.Generic.List<Dynamo.Core.Clipboard.ClipboardNoteData>
+Dynamo.Core.Clipboard.ClipboardData.Notes.set -> void
+Dynamo.Core.Clipboard.ClipboardData.SourceInstanceId.get -> string
+Dynamo.Core.Clipboard.ClipboardData.SourceInstanceId.set -> void
+Dynamo.Core.Clipboard.ClipboardData.Timestamp.get -> System.DateTime
+Dynamo.Core.Clipboard.ClipboardData.Timestamp.set -> void
+Dynamo.Core.Clipboard.ClipboardData.Version.get -> string
+Dynamo.Core.Clipboard.ClipboardData.Version.set -> void
+Dynamo.Core.Clipboard.ClipboardDependencyData
+Dynamo.Core.Clipboard.ClipboardDependencyData.ClipboardDependencyData() -> void
+Dynamo.Core.Clipboard.ClipboardDependencyData.Name.get -> string
+Dynamo.Core.Clipboard.ClipboardDependencyData.Name.set -> void
+Dynamo.Core.Clipboard.ClipboardDependencyData.Nodes.get -> System.Collections.Generic.List<string>
+Dynamo.Core.Clipboard.ClipboardDependencyData.Nodes.set -> void
+Dynamo.Core.Clipboard.ClipboardDependencyData.ReferenceType.get -> string
+Dynamo.Core.Clipboard.ClipboardDependencyData.ReferenceType.set -> void
+Dynamo.Core.Clipboard.ClipboardDependencyData.Version.get -> string
+Dynamo.Core.Clipboard.ClipboardDependencyData.Version.set -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData
+Dynamo.Core.Clipboard.ClipboardNodeViewData.ClipboardNodeViewData() -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData.Excluded.get -> bool
+Dynamo.Core.Clipboard.ClipboardNodeViewData.Excluded.set -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData.Id.get -> string
+Dynamo.Core.Clipboard.ClipboardNodeViewData.Id.set -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData.IsSetAsInput.get -> bool
+Dynamo.Core.Clipboard.ClipboardNodeViewData.IsSetAsInput.set -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData.IsSetAsOutput.get -> bool
+Dynamo.Core.Clipboard.ClipboardNodeViewData.IsSetAsOutput.set -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData.Name.get -> string
+Dynamo.Core.Clipboard.ClipboardNodeViewData.Name.set -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData.ShowGeometry.get -> bool
+Dynamo.Core.Clipboard.ClipboardNodeViewData.ShowGeometry.set -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData.X.get -> double
+Dynamo.Core.Clipboard.ClipboardNodeViewData.X.set -> void
+Dynamo.Core.Clipboard.ClipboardNodeViewData.Y.get -> double
+Dynamo.Core.Clipboard.ClipboardNodeViewData.Y.set -> void
+Dynamo.Core.Clipboard.ClipboardConnectorPinData
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.ClipboardConnectorPinData() -> void
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.ConnectorId.get -> string
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.ConnectorId.set -> void
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.Id.get -> string
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.Id.set -> void
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.X.get -> double
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.X.set -> void
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.Y.get -> double
+Dynamo.Core.Clipboard.ClipboardConnectorPinData.Y.set -> void
+Dynamo.Core.Clipboard.ClipboardNoteData
+Dynamo.Core.Clipboard.ClipboardNoteData.ClipboardNoteData() -> void
+Dynamo.Core.Clipboard.ClipboardNoteData.Id.get -> string
+Dynamo.Core.Clipboard.ClipboardNoteData.Id.set -> void
+Dynamo.Core.Clipboard.ClipboardNoteData.PinnedNodeId.get -> string
+Dynamo.Core.Clipboard.ClipboardNoteData.PinnedNodeId.set -> void
+Dynamo.Core.Clipboard.ClipboardNoteData.Text.get -> string
+Dynamo.Core.Clipboard.ClipboardNoteData.Text.set -> void
+Dynamo.Core.Clipboard.ClipboardNoteData.X.get -> double
+Dynamo.Core.Clipboard.ClipboardNoteData.X.set -> void
+Dynamo.Core.Clipboard.ClipboardNoteData.Y.get -> double
+Dynamo.Core.Clipboard.ClipboardNoteData.Y.set -> void
+Dynamo.Core.Clipboard.ClipboardPasteResult
+Dynamo.Core.Clipboard.ClipboardPasteResult.ClipboardPasteResult() -> void
+Dynamo.Core.Clipboard.ClipboardPasteResult.DummyNodeIds.get -> System.Collections.Generic.List<string>
+Dynamo.Core.Clipboard.ClipboardPasteResult.DummyNodeIds.set -> void
+Dynamo.Core.Clipboard.ClipboardPasteResult.ErrorMessage.get -> string
+Dynamo.Core.Clipboard.ClipboardPasteResult.ErrorMessage.set -> void
+Dynamo.Core.Clipboard.ClipboardPasteResult.MissingDependencies.get -> System.Collections.Generic.List<Dynamo.Core.Clipboard.ClipboardDependencyData>
+Dynamo.Core.Clipboard.ClipboardPasteResult.MissingDependencies.set -> void
+Dynamo.Core.Clipboard.ClipboardPasteResult.Success.get -> bool
+Dynamo.Core.Clipboard.ClipboardPasteResult.Success.set -> void
+Dynamo.Core.Clipboard.IClipboardService
+Dynamo.Core.Clipboard.IClipboardService.CopyToSystemClipboard(Dynamo.Core.Clipboard.ClipboardData clipboardData) -> void
+Dynamo.Core.Clipboard.IClipboardService.GetFromSystemClipboard() -> Dynamo.Core.Clipboard.ClipboardData
+Dynamo.Core.Clipboard.IClipboardService.GetRawClipboardJson() -> string
+Dynamo.Core.Clipboard.IClipboardService.HasDynamoClipboardData() -> bool
+Dynamo.Core.Clipboard.NullClipboardService
+Dynamo.Core.Clipboard.NullClipboardService.CopyToSystemClipboard(Dynamo.Core.Clipboard.ClipboardData clipboardData) -> void
+Dynamo.Core.Clipboard.NullClipboardService.GetFromSystemClipboard() -> Dynamo.Core.Clipboard.ClipboardData
+Dynamo.Core.Clipboard.NullClipboardService.GetRawClipboardJson() -> string
+Dynamo.Core.Clipboard.NullClipboardService.HasDynamoClipboardData() -> bool
+Dynamo.Core.Clipboard.NullClipboardService.NullClipboardService() -> void
+Dynamo.Models.DynamoModel.ClipboardService.get -> Dynamo.Core.Clipboard.IClipboardService
+Dynamo.Models.DynamoModel.ClipboardService.set -> void
+Dynamo.Models.DynamoModel.CopyToSystemClipboard() -> void
+Dynamo.Models.DynamoModel.HasCrossInstanceClipboardData() -> bool
+Dynamo.Models.DynamoModel.HasSystemClipboardData() -> bool
+Dynamo.Models.DynamoModel.InstanceId.get -> string
+Dynamo.Models.DynamoModel.PasteFromSystemClipboard() -> Dynamo.Core.Clipboard.ClipboardPasteResult
+Dynamo.Models.DynamoModel.PasteFromSystemClipboard(Dynamo.Utilities.Point2D targetPoint, bool useOffset = true) -> Dynamo.Core.Clipboard.ClipboardPasteResult
+Dynamo.Models.DynamoModel.RequestMissingDependencyWarning -> System.Action<System.Collections.Generic.IEnumerable<Dynamo.Core.Clipboard.ClipboardDependencyData>>

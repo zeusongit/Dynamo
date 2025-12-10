@@ -360,7 +360,7 @@ namespace Dynamo.UI.Views
                 // Zoom control disabled
                 webView.CoreWebView2.Settings.IsZoomControlEnabled = false;
 
-                var assembly = Assembly.GetExecutingAssembly();
+                    var assembly = Assembly.GetExecutingAssembly();
 
                 using (Stream stream = assembly.GetManifestResourceStream(htmlEmbeddedFile))
                 using (StreamReader reader = new StreamReader(stream))

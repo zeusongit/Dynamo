@@ -1024,72 +1024,25 @@ namespace Dynamo.Controls
             var FocuseElement = Keyboard.FocusedElement;
             if (FocuseElement == null) return;
 
-            var clipBoard = dynamoViewModel.Model.ClipBoard;
-
-            var locatableModels = clipBoard.Where(item => item is NoteModel || item is NodeModel);
-            var modelsExcludingConnectorPins = locatableModels.Where(model => !(model is ConnectorPinModel));
-            if(modelsExcludingConnectorPins is null || modelsExcludingConnectorPins.Count()<1) { return; }
-
-            var modelBounds = modelsExcludingConnectorPins.Select(lm =>
-                new Rect { X = lm.X, Y = lm.Y, Height = lm.Height, Width = lm.Width });
-
-            // Find workspace view.
+            // Always prefer system clipboard (most recent copy from any Dynamo instance)
+            // The Model.Paste methods handle the clipboard logic internally
             var workspace = this.ChildOfType<WorkspaceView>();
-            var workspaceBounds = workspace.GetVisibleBounds();
-
-            // is at least one note/node located out of visible workspace part
-            var outOfView = modelBounds.Any(m => !workspaceBounds.Contains(m));
-
-            // If copied nodes are out of view, we paste their copies under mouse cursor or at the center of workspace.
-            if (outOfView)
+            
+            if (workspace != null && workspace.IsMouseOver)
             {
-                // If mouse is over workspace, paste copies under mouse cursor.
-                if (workspace.IsMouseOver)
-                {
-                    dynamoViewModel.Model.Paste(Mouse.GetPosition(workspace.WorkspaceElements).AsDynamoType(), false);
-                }
-                else // If mouse is out of workspace view, then paste copies at the center.
-                {
-                    PasteNodeAtTheCenter(workspace);
-                }
-
-                return;
+                // Paste at mouse position
+                dynamoViewModel.Model.Paste(Mouse.GetPosition(workspace.WorkspaceElements).AsDynamoType(), false);
             }
-
-            // All nodes are inside of workspace and visible for user.
-            // Order them by CenterX and CenterY.
-            var orderedItems = modelsExcludingConnectorPins.OrderBy(item => item.CenterX + item.CenterY);
-
-            // Search for the rightmost item. It's item with the biggest X, Y coordinates of center.
-            var rightMostItem = orderedItems.Last();
-            // Search for the leftmost item. It's item with the smallest X, Y coordinates of center.
-            var leftMostItem = orderedItems.First();
-
-            // Compute shift so that left most item will appear at right most item place with offset.
-            var shiftX = rightMostItem.X + rightMostItem.Width - leftMostItem.X;
-            var shiftY = rightMostItem.Y - leftMostItem.Y;
-
-            // Find new node bounds.
-            var newNodeBounds = modelBounds
-                .Select(node => new Rect(node.X + shiftX + workspace.ViewModel.Model.CurrentPasteOffset,
-                                         node.Y + shiftY + workspace.ViewModel.Model.CurrentPasteOffset,
-                                         node.Width, node.Height));
-
-            outOfView = newNodeBounds.Any(node => !workspaceBounds.Contains(node));
-
-            // If new node bounds appeare out of workspace view, we should paste them at the center.
-            if (outOfView)
+            else if (workspace != null)
             {
+                // Paste at center of visible workspace
                 PasteNodeAtTheCenter(workspace);
-                return;
             }
-
-            var x = shiftX + modelsExcludingConnectorPins.Min(m => m.X);
-            var y = shiftY + modelsExcludingConnectorPins.Min(m => m.Y);
-
-            // All copied nodes are inside of workspace.
-            // Paste them with little offset.           
-            dynamoViewModel.Model.Paste(new Point2D(x, y));
+            else
+            {
+                // Fallback - let the model handle the paste with default positioning
+                dynamoViewModel.Model.Paste();
+            }
         }
 
         /// <summary>

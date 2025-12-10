@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Dynamo.Core.Clipboard;
 using Dynamo.Configuration;
 using Dynamo.Core;
 using Dynamo.Engine;
@@ -340,6 +341,27 @@ namespace Dynamo.Models
         ///     The copy/paste clipboard.
         /// </summary>
         public ObservableCollection<ModelBase> ClipBoard { get; set; }
+
+        /// <summary>
+        /// Unique identifier for this Dynamo instance, used for cross-instance clipboard operations.
+        /// </summary>
+        public string InstanceId { get; } = Guid.NewGuid().ToString();
+
+        /// <summary>
+        /// The clipboard service for cross-instance copy/paste operations.
+        /// This may be null if running in headless mode or if no clipboard service is available.
+        /// </summary>
+        public IClipboardService ClipboardService { get; set; }
+
+        /// <summary>
+        /// The clipboard serializer for serializing/deserializing clipboard data.
+        /// </summary>
+        internal ClipboardSerializer ClipboardSerializer { get; private set; }
+
+        /// <summary>
+        /// The clipboard paste handler for handling paste operations from system clipboard.
+        /// </summary>
+        internal ClipboardPasteHandler ClipboardPasteHandler { get; private set; }
 
         /// <summary>
         ///     Specifies whether connectors are displayed in Dynamo.
@@ -950,6 +972,9 @@ namespace Dynamo.Models
             InitializeCustomNodeManager();
 
             ResetEngineInternal();
+
+            // Initialize clipboard components for cross-instance copy/paste
+            InitializeClipboardComponents();
 
             EngineController.VMLibrariesReset += ReloadDummyNodes;
 
@@ -2073,6 +2098,21 @@ namespace Dynamo.Models
             ((HomeWorkspaceModel)CurrentWorkspace).Run();
         }
 
+        /// <summary>
+        /// Initializes the clipboard components for cross-instance copy/paste operations.
+        /// </summary>
+        private void InitializeClipboardComponents()
+        {
+            ClipboardSerializer = new ClipboardSerializer(EngineController, Logger, InstanceId);
+            ClipboardPasteHandler = new ClipboardPasteHandler(
+                NodeFactory,
+                LibraryServices,
+                CustomNodeManager,
+                EngineController,
+                Logger,
+                IsTestMode);
+        }
+
         #endregion
 
         #region save/load
@@ -3093,6 +3133,7 @@ namespace Dynamo.Models
 
         /// <summary>
         /// Copy selected ISelectable objects to the clipboard.
+        /// Also copies to the system clipboard for cross-instance paste operations.
         /// </summary>
         public void Copy()
         {
@@ -3118,15 +3159,102 @@ namespace Dynamo.Models
 
                 ClipBoard.AddRange(connectors);
             }
+
+            // Also copy to system clipboard for cross-instance paste
+            CopyToSystemClipboard();
+        }
+
+        /// <summary>
+        /// Copies the current in-memory clipboard contents to the system clipboard
+        /// for cross-instance paste operations.
+        /// </summary>
+        public void CopyToSystemClipboard()
+        {
+            if (ClipboardService == null || ClipboardSerializer == null || ClipBoard.Count == 0)
+                return;
+
+            try
+            {
+                // Collect view data for nodes (to be populated by view layer)
+                var nodeViewData = new List<ClipboardNodeViewData>();
+                foreach (var node in ClipBoard.OfType<NodeModel>())
+                {
+                    nodeViewData.Add(new ClipboardNodeViewData
+                    {
+                        Id = node.GUID.ToString(),
+                        Name = node.Name,
+                        ShowGeometry = true, // Default, view layer can override
+                        Excluded = node.IsFrozen,
+                        IsSetAsInput = node.IsSetAsInput,
+                        IsSetAsOutput = node.IsSetAsOutput
+                    });
+                }
+
+                var clipboardData = ClipboardSerializer.Serialize(ClipBoard, CurrentWorkspace, nodeViewData);
+                ClipboardService.CopyToSystemClipboard(clipboardData);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogWarning($"Failed to copy to system clipboard: {ex.Message}", WarningLevel.Moderate);
+            }
+        }
+
+        /// <summary>
+        /// Checks if there is Dynamo clipboard data in the system clipboard.
+        /// </summary>
+        /// <returns>True if system clipboard contains Dynamo data that can be pasted</returns>
+        public bool HasSystemClipboardData()
+        {
+            return ClipboardService?.HasDynamoClipboardData() ?? false;
+        }
+
+        /// <summary>
+        /// Checks if the system clipboard contains data from a DIFFERENT Dynamo instance.
+        /// This is used to determine if cross-instance paste should take priority.
+        /// </summary>
+        /// <returns>True if system clipboard has data from another instance</returns>
+        public bool HasCrossInstanceClipboardData()
+        {
+            if (ClipboardService == null)
+                return false;
+
+            var clipboardData = ClipboardService.GetFromSystemClipboard();
+            if (clipboardData == null)
+                return false;
+
+            // If the clipboard data is from a different instance, it's cross-instance data
+            return !string.IsNullOrEmpty(clipboardData.SourceInstanceId) 
+                   && clipboardData.SourceInstanceId != InstanceId;
         }
 
         /// <summary>
         ///     Paste ISelectable objects from the clipboard to the workspace
-        /// so that the nodes appear in their original location with a slight offset
+        /// so that the nodes appear in their original location with a slight offset.
+        /// If the in-memory clipboard is empty, attempts to paste from the system clipboard.
         /// </summary>
         public void Paste()
         {
+            // Check for cross-instance clipboard data (from a DIFFERENT Dynamo instance)
+            // Only prefer system clipboard if it's from another instance
+            if (HasCrossInstanceClipboardData())
+            {
+                PasteFromSystemClipboard();
+                return;
+            }
+
+            // For same-instance paste, use internal clipboard (preserves existing behavior)
+            // This ensures copying something outside Dynamo doesn't break paste
             var locatableModels = ClipBoard.Where(model => model is NoteModel || model is NodeModel);
+            if (!locatableModels.Any())
+            {
+                // Internal clipboard is empty, try system clipboard as fallback
+                if (HasSystemClipboardData())
+                {
+                    PasteFromSystemClipboard();
+                }
+                return;
+            }
+
             var x = locatableModels.Min(m => m.X);
             var y = locatableModels.Min(m => m.Y);
             var targetPoint = new Point2D(x, y);
@@ -3136,12 +3264,32 @@ namespace Dynamo.Models
 
         /// <summary>
         ///     Paste ISelectable objects from the clipboard to the workspace at specified point.
+        /// If the in-memory clipboard is empty, attempts to paste from the system clipboard.
         /// </summary>
         /// <param name="targetPoint">Location where data will be pasted</param>
         /// <param name="useOffset">Indicates whether we will use current workspace offset or paste nodes
         /// directly in this point. </param>
         public void Paste(Point2D targetPoint, bool useOffset = true)
         {
+            // Check for cross-instance clipboard data (from a DIFFERENT Dynamo instance)
+            // Only prefer system clipboard if it's from another instance
+            if (HasCrossInstanceClipboardData())
+            {
+                PasteFromSystemClipboard(targetPoint, useOffset);
+                return;
+            }
+
+            // For same-instance paste, use internal clipboard (preserves existing behavior)
+            // If internal clipboard is empty, try system clipboard as fallback
+            if (ClipBoard.Count == 0)
+            {
+                if (HasSystemClipboardData())
+                {
+                    PasteFromSystemClipboard(targetPoint, useOffset);
+                }
+                return;
+            }
+            
             //When called from somewhere other than StateMachine and only ConnectorPins are selected.
             if (ClipBoard.All(m => m is ConnectorPinModel))
             {
@@ -3336,6 +3484,115 @@ namespace Dynamo.Models
                 // Record models that are created as part of the command.
                 CurrentWorkspace.RecordCreatedModels(createdModels);
             }
+        }
+
+        /// <summary>
+        /// Pastes from the system clipboard to the current workspace.
+        /// Uses the original positions from the clipboard data with a slight offset.
+        /// </summary>
+        /// <returns>The result of the paste operation</returns>
+        public ClipboardPasteResult PasteFromSystemClipboard()
+        {
+            var clipboardData = ClipboardService?.GetFromSystemClipboard();
+            if (clipboardData == null)
+            {
+                return new ClipboardPasteResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "No valid clipboard data found" 
+                };
+            }
+
+            // Calculate target point from the clipboard data
+            var nodes = clipboardData.Nodes.Cast<Newtonsoft.Json.Linq.JObject>();
+            if (!nodes.Any())
+            {
+                return new ClipboardPasteResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "Clipboard contains no nodes" 
+                };
+            }
+
+            var minX = nodes.Min(n => n["X"]?.Value<double>() ?? 0);
+            var minY = nodes.Min(n => n["Y"]?.Value<double>() ?? 0);
+            var targetPoint = new Point2D(minX, minY);
+
+            return PasteFromSystemClipboard(targetPoint, useOffset: true);
+        }
+
+        /// <summary>
+        /// Pastes from the system clipboard to the current workspace at the specified point.
+        /// </summary>
+        /// <param name="targetPoint">The target location for pasting</param>
+        /// <param name="useOffset">Whether to apply a paste offset</param>
+        /// <returns>The result of the paste operation</returns>
+        public ClipboardPasteResult PasteFromSystemClipboard(Point2D targetPoint, bool useOffset = true)
+        {
+            if (ClipboardService == null || ClipboardPasteHandler == null)
+            {
+                return new ClipboardPasteResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "Clipboard service not available" 
+                };
+            }
+
+            var clipboardData = ClipboardService.GetFromSystemClipboard();
+            if (clipboardData == null)
+            {
+                return new ClipboardPasteResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = "No valid clipboard data in system clipboard" 
+                };
+            }
+
+            // Validate the clipboard data
+            var validation = ClipboardSerializer.Validate(clipboardData);
+            if (!validation.IsValid)
+            {
+                var errorMsg = string.Join("; ", validation.Errors);
+                Logger?.LogWarning($"Clipboard validation failed: {errorMsg}", WarningLevel.Moderate);
+                return new ClipboardPasteResult 
+                { 
+                    Success = false, 
+                    ErrorMessage = errorMsg 
+                };
+            }
+
+            // Log warnings
+            foreach (var warning in validation.Warnings)
+            {
+                Logger?.LogWarning(warning, WarningLevel.Mild);
+            }
+
+            // Perform the paste using the handler
+            var result = ClipboardPasteHandler.Paste(clipboardData, CurrentWorkspace, targetPoint, useOffset);
+
+            // Notify about missing dependencies
+            if (result.MissingDependencies.Any())
+            {
+                OnRequestMissingDependencyWarning(result.MissingDependencies);
+            }
+
+            // Request layout update
+            OnRequestLayoutUpdate(this, EventArgs.Empty);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Event raised when pasting from clipboard results in missing dependencies.
+        /// </summary>
+        public event Action<IEnumerable<ClipboardDependencyData>> RequestMissingDependencyWarning;
+
+        /// <summary>
+        /// Raises the RequestMissingDependencyWarning event.
+        /// </summary>
+        protected virtual void OnRequestMissingDependencyWarning(IEnumerable<ClipboardDependencyData> missingDependencies)
+        {
+            RequestMissingDependencyWarning?.Invoke(missingDependencies);
         }
 
         private AnnotationModel CreateAnnotationModel(

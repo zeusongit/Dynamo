@@ -1006,6 +1006,24 @@ namespace Dynamo.Wpf.Properties {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to The following packages or custom nodes are required but not installed. Some nodes may appear as placeholder (dummy) nodes:.
+        /// </summary>
+        public static string ClipboardMissingDependenciesMessage {
+            get {
+                return ResourceManager.GetString("ClipboardMissingDependenciesMessage", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Missing Dependencies.
+        /// </summary>
+        public static string ClipboardMissingDependenciesTitle {
+            get {
+                return ResourceManager.GetString("ClipboardMissingDependenciesTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Python Engine Change.
         /// </summary>
         public static string CPython3EngineNotificationMessageBoxHeader {

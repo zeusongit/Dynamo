@@ -1132,6 +1132,14 @@ Don't worry, you'll have the option to save your work.</value>
   <data name="CopyToClipboardFailedMessage" xml:space="preserve">
     <value>Copy to clipboard failed</value>
   </data>
+  <data name="ClipboardMissingDependenciesTitle" xml:space="preserve">
+    <value>Missing Dependencies</value>
+    <comment>Title for dialog when pasting from clipboard with missing dependencies</comment>
+  </data>
+  <data name="ClipboardMissingDependenciesMessage" xml:space="preserve">
+    <value>The following packages or custom nodes are required but not installed. Some nodes may appear as placeholder (dummy) nodes:</value>
+    <comment>Message when pasting from clipboard with missing dependencies</comment>
+  </data>
   <data name="DynamoUpdateAvailableToolTip" xml:space="preserve">
     <value>A Dynamo update is available. Click to install.</value>
   </data>

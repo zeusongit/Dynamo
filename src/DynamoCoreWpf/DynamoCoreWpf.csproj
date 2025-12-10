@@ -647,6 +647,7 @@
     <Compile Include="NodeViewCustomization\NodeViewCustomizationLibrary.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\UsageReportingManager.cs" />
+    <Compile Include="Clipboard\WpfClipboardService.cs" />
     <Compile Include="TestInfrastructure\AbstractMutator.cs" />
     <Compile Include="TestInfrastructure\CodeBlockNodeMutator.cs" />
     <Compile Include="TestInfrastructure\CopyNodeMutator.cs" />

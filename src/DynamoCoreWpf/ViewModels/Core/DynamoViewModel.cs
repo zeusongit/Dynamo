@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Dynamo.Core.Clipboard;
 using Dynamo.Configuration;
 using Dynamo.Controls;
 using Dynamo.Core;
@@ -41,6 +42,7 @@ using Dynamo.Wpf.Interfaces;
 using Dynamo.Wpf.Properties;
 using Dynamo.Wpf.UI;
 using Dynamo.Wpf.UI.GuidedTour;
+using Dynamo.Wpf.Clipboard;
 using Dynamo.Wpf.Utilities;
 using Dynamo.Wpf.ViewModels;
 using Dynamo.Wpf.ViewModels.Core;
@@ -849,6 +851,10 @@ namespace Dynamo.ViewModels
             this.HideReportOptions = startConfiguration.HideReportOptions || model.NoNetworkMode;
             UsageReportingManager.Instance.InitializeCore(this);
             this.WatchHandler = startConfiguration.WatchHandler;
+
+            // Initialize the clipboard service for cross-instance copy/paste
+            InitializeClipboardService();
+
             var pmExtension = model.GetPackageManagerExtension();
 
             if (pmExtension != null)
@@ -1220,6 +1226,57 @@ namespace Dynamo.ViewModels
             UsageReportingManager.Instance.PropertyChanged -= CollectInfoManager_PropertyChanged;
         }
 
+        /// <summary>
+        /// Initializes the clipboard service for cross-instance copy/paste operations.
+        /// </summary>
+        private void InitializeClipboardService()
+        {
+            if (model.ClipboardSerializer != null)
+            {
+                var clipboardService = new WpfClipboardService(model.ClipboardSerializer, model.Logger);
+                model.ClipboardService = clipboardService;
+
+                // Subscribe to missing dependency warnings
+                model.RequestMissingDependencyWarning += OnRequestMissingDependencyWarning;
+            }
+        }
+
+        /// <summary>
+        /// Handles the display of missing dependency warnings when pasting from clipboard.
+        /// </summary>
+        private void OnRequestMissingDependencyWarning(IEnumerable<ClipboardDependencyData> missingDependencies)
+        {
+            if (missingDependencies == null || !missingDependencies.Any())
+                return;
+
+            // Use fallback strings in case resources aren't loaded
+            var titleText = WpfResources.ClipboardMissingDependenciesTitle ?? "Missing Dependencies";
+            var messageText = WpfResources.ClipboardMissingDependenciesMessage 
+                ?? "The following packages or custom nodes are required but not installed. Some nodes may appear as placeholder (dummy) nodes:";
+
+            var message = messageText + "\n\n";
+            foreach (var dep in missingDependencies)
+            {
+                message += $"• {dep.Name}";
+                if (!string.IsNullOrEmpty(dep.Version))
+                    message += $" (v{dep.Version})";
+                if (!string.IsNullOrEmpty(dep.ReferenceType) && dep.ReferenceType != "Package")
+                    message += $" [{dep.ReferenceType}]";
+                message += "\n";
+            }
+
+            // Show warning dialog on UI thread
+            UIDispatcher.BeginInvoke(new Action(() =>
+            {
+                MessageBoxService.Show(
+                    Owner,
+                    message,
+                    titleText,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }));
+        }
+
         private void InitializeRecentFiles()
         {
             this.RecentFiles = new ObservableCollection<string>(model.PreferenceSettings.RecentFiles);
@@ -1528,11 +1585,9 @@ namespace Dynamo.ViewModels
 
         internal bool CanPaste(object parameters)
         {
-            if (model.ClipBoard.Count == 0)
-            {
-                return false;
-            }
-
+            // Always allow paste - the actual paste operation will check if there's
+            // valid data to paste from either internal or system clipboard.
+            // This avoids timing issues with system clipboard detection.
             return true;
         }
 
