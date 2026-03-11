@@ -216,17 +216,22 @@ namespace Dynamo.Graph.Workspaces
         internal class DelayedGraphExecution : IDisposable
         {
             private readonly WorkspaceModel workspace;
+            private readonly bool requestRunOnDispose;
 
-            public DelayedGraphExecution(WorkspaceModel wModel)
+            public DelayedGraphExecution(WorkspaceModel wModel, bool requestRunOnDispose = true)
             {
                 workspace = wModel;
+                this.requestRunOnDispose = requestRunOnDispose;
                 Interlocked.Increment(ref workspace.delayGraphExecutionCounter);
             }
 
             public virtual void Dispose()
             {
                 Interlocked.Decrement(ref workspace.delayGraphExecutionCounter);
-                workspace.RequestRun();
+                if (requestRunOnDispose)
+                {
+                    workspace.RequestRun();
+                }
             }
         }
         #endregion
@@ -1425,6 +1430,8 @@ namespace Dynamo.Graph.Workspaces
 
             this.nodes = new List<NodeModel>(nodes);
             this.notes = new List<NoteModel>(notes);
+            foreach (var note in this.notes)
+                note.Workspace = this;
 
             this.annotations = new List<AnnotationModel>(annotations);
 
@@ -1754,6 +1761,8 @@ namespace Dynamo.Graph.Workspaces
 
         private void AddNote(NoteModel note)
         {
+            note.Workspace = this;
+
             lock (notes)
             {
                 notes.Add(note);
@@ -2792,9 +2801,9 @@ namespace Dynamo.Graph.Workspaces
         /// <summary>
         ///     Returns a DelayedGraphExecution object.
         /// </summary>
-        internal DelayedGraphExecution BeginDelayedGraphExecution()
+        internal DelayedGraphExecution BeginDelayedGraphExecution(bool requestRunOnDispose = true)
         {
-            return new DelayedGraphExecution(this);
+            return new DelayedGraphExecution(this, requestRunOnDispose);
         }
     }
 }
