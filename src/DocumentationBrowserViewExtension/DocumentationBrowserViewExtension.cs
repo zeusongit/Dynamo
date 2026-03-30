@@ -263,8 +263,7 @@ namespace Dynamo.DocumentationBrowser
                 }
                 if (styleItem != null)
                 {
-                    var groupStyleItem = new GroupStyleItem {Name = styleItem.Name, HexColorString = styleItem.HexColorString};
-                    annotationViewModel.UpdateGroupStyle(groupStyleItem);
+                    annotationViewModel.UpdateGroupStyle(styleItem);
                 }
 
                 DynamoSelection.Instance.ClearSelection();

@@ -1186,7 +1186,8 @@ namespace Dynamo.Models
             {
                 // Ensure default group styles are populated if none are present
                 // (e.g. when a host or test provides a fresh PreferenceSettings with no styles configured).
-                if (preferences is PreferenceSettings prefs && !prefs.GroupStyleItemsList.Any())
+                if (preferences is PreferenceSettings prefs &&
+                    (prefs.GroupStyleItemsList == null || !prefs.GroupStyleItemsList.Any()))
                     prefs.GroupStyleItemsList = GroupStyleItem.CloneDefaultGroupStyleItems();
                 return preferences;
             }
