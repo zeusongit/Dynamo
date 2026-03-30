@@ -8,9 +8,11 @@ using System.Threading.Tasks;
 
 namespace Dynamo.Tests
 {
+    [Category("ExcelTestInterop")]
     internal class ExcelTests
     {
         [Category("DSExecution")]
+        [Category("ExcelTestInterop")]
         class DSEvaluationModelTest : DynamoModelTestBase
         {
             protected override void GetLibrariesToPreload(List<string> libraries)
@@ -24,6 +26,7 @@ namespace Dynamo.Tests
             }
 
             [Test]
+            [Category("ExcelTestInterop")]
             public void TestExcel()
             {
                 // (1..5) + 1;
