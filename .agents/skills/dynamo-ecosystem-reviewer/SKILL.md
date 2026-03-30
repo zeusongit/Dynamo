@@ -1,5 +1,5 @@
 ---
-name: Dynamo Ecosystem Reviewer
+name: dynamo-ecosystem-reviewer
 description: Reviews code changes for compatibility with the broader Dynamo ecosystem. Applies known platform constraints — cross-platform portability, service compatibility, thread safety — across Dynamo's multiple repos.
 ---
 
