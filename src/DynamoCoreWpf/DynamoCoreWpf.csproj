@@ -23,7 +23,7 @@
 
   <Target Name="NpmRunBuild" BeforeTargets="BeforeBuild">
       <PropertyGroup>
-          <PackageVersion>1.0.30</PackageVersion>
+          <PackageVersion>1.0.31</PackageVersion>
           <PackageName>SplashScreen</PackageName>
       </PropertyGroup>
       <Exec Command="$(PowerShellCommand) -ExecutionPolicy Bypass -File &quot;$(SolutionDir)pkgexist.ps1&quot; &quot;$(PackageName)&quot; &quot;$(PackageVersion)&quot;" ConsoleToMSBuild="true">
@@ -59,7 +59,7 @@
 
     <Target Name="NpmRunBuildHomePage" BeforeTargets="BeforeBuild">
         <PropertyGroup>
-            <PackageVersion>1.0.25</PackageVersion>
+            <PackageVersion>1.0.27</PackageVersion>
             <PackageName>DynamoHome</PackageName>
         </PropertyGroup>
         <Exec Command="$(PowerShellCommand) -ExecutionPolicy Bypass -File &quot;$(SolutionDir)pkgexist.ps1&quot; &quot;$(PackageName)&quot; &quot;$(PackageVersion)&quot;" ConsoleToMSBuild="true">
@@ -94,7 +94,7 @@
 
     <Target Name="NpmRunBuildPMWizard" BeforeTargets="BeforeBuild">
         <PropertyGroup>
-            <PackageVersion>0.0.24</PackageVersion>
+            <PackageVersion>0.0.27</PackageVersion>
             <PackageName>PackageManagerWizard</PackageName>
         </PropertyGroup>
         <Exec Command="$(PowerShellCommand) -ExecutionPolicy Bypass -File &quot;$(SolutionDir)pkgexist.ps1&quot; &quot;$(PackageName)&quot; &quot;$(PackageVersion)&quot;" ConsoleToMSBuild="true">
@@ -163,6 +163,7 @@
     <None Remove="Packages\SplashScreen\build\index.html" />
     <None Remove="Packages\DynamoHome\build\index.bundle.js" />
     <None Remove="Packages\DynamoHome\build\index.html" />
+    <None Remove="UI\Images\adsk-logo-16px.png" />
     <None Remove="UI\Images\Annotations\frozen-dark-64px.png" />
     <None Remove="UI\Images\Annotations\frozen-hover-64px.png" />
     <None Remove="UI\Images\Annotations\frozen-light-64px.png" />
@@ -482,7 +483,7 @@
       <PackageReference Include="HelixToolkit.Core.Wpf" Version="2.24.0" />
       <PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.24.0" />
       <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
-      <PackageReference Include="DynamoVisualProgramming.LibG_232_0_0" Version="4.0.0.3915" />
+      <PackageReference Include="DynamoVisualProgramming.LibG_232_0_0" Version="4.0.0.4313" />
     <PackageReference Include="FontAwesome5" Version="2.1.11" />
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" CopyXML="true" />
     <PackageReference Include="Greg" Version="3.0.2.8780" />
@@ -798,9 +799,7 @@
     <Compile Include="Views\GuidedTour\SurveyPopupWindow.xaml.cs">
       <DependentUpon>SurveyPopupWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\HomePage\HomePage.xaml.cs" />
     <Compile Include="Views\Input\ParameterEditor.cs" />
-    <Compile Include="Views\PackageManager\Components\PackageManagerWizard\PackageManagerWizard.xaml.cs" />
     <Compile Include="Views\PackageManager\Controls\CustomBrowserControl.xaml.cs" />
     <Compile Include="Views\PackageManager\Controls\FilterTagControl.xaml.cs" />
     <Compile Include="Views\PackageManager\Controls\LoadingAnimationStripeControl.xaml.cs" />
@@ -810,6 +809,7 @@
     <Compile Include="Views\PackageManager\Controls\PackageManagerPublishControl.xaml.cs" />
     <Compile Include="Views\PackageManager\Controls\PackageManagerPublishHost.xaml.cs" />
     <Compile Include="Views\PackageManager\Controls\PackageManagerSearchControl.xaml.cs" />
+    <Compile Include="Views\PackageManager\Controls\PackageManagerTabControl.cs" />
     <Compile Include="Views\PackageManager\Controls\SearchBoxControl.xaml.cs" />
     <Compile Include="Views\PackageManager\PackageManagerView.xaml.cs" />
     <Compile Include="Views\Menu\TrustedPathView.xaml.cs" />
@@ -1184,6 +1184,7 @@
     <Resource Include="UI\Images\AboutWindow\logo_about_dark.png">
       <CopyToOutputDirectory></CopyToOutputDirectory>
     </Resource>
+    <Resource Include="UI\Images\adsk-logo-16px.png" />
     <Resource Include="UI\Images\Alignment\align_bottom.png" />
     <Resource Include="UI\Images\Alignment\align_left.png" />
     <Resource Include="UI\Images\Alignment\align_right.png" />
