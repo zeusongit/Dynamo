@@ -33,7 +33,11 @@ namespace Dynamo.UI.Prompts
             InitializeComponent();
             this.dynamoViewModel = dynamoViewModel;
 
-            Owner = dynamoViewModel.Owner;
+            var ownerWindow = dynamoViewModel.Owner;
+            if (ownerWindow != null && ownerWindow.IsLoaded)
+            {
+                Owner = ownerWindow;
+            }
             this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
             // do not accept value if user closes 

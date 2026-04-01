@@ -171,6 +171,9 @@ namespace Dynamo.Wpf.Views
             dynViewModel.PreferencesViewModel.TrustedPathsViewModel.PropertyChanged -= TrustedPathsViewModel_PropertyChanged;
             dynViewModel.CheckCustomGroupStylesChanges(originalCustomGroupStyles);
             (this.Owner as DynamoView).EnableOverlayBlocker(false);
+            // Reset owner back to the main Dynamo window so that dialogs opened after
+            // Preferences closes do not attempt to use the now-closed window as owner.
+            dynViewModel.Owner = this.Owner;
 
             Close();
         }
