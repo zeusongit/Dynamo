@@ -24,6 +24,7 @@ namespace Dynamo.PythonMigration.MigrationAssistant
         private readonly Version dynamoVersion;
         private PythonNode PythonNode;
 
+        private readonly Func<string, string> codeConverter;
         private IDiffViewViewModel currentViewModel;
         private SideBySideDiffModel diffModel;
 
@@ -43,7 +44,7 @@ namespace Dynamo.PythonMigration.MigrationAssistant
             set { this.currentViewModel = value; RaisePropertyChanged(nameof(this.CurrentViewModel)); }
         }
 
-        public PythonMigrationAssistantViewModel(PythonNode pythonNode, WorkspaceModel workspace, IPathManager pathManager, Version dynamoVersion)
+        public PythonMigrationAssistantViewModel(PythonNode pythonNode, WorkspaceModel workspace, IPathManager pathManager, Version dynamoVersion, Func<string, string> codeConverter = null)
         {
             PythonNode = pythonNode;
             OldCode = pythonNode.Script;
@@ -51,6 +52,7 @@ namespace Dynamo.PythonMigration.MigrationAssistant
             this.workspace = workspace;
             backupDirectory = pathManager.BackupDirectory;
             this.dynamoVersion = dynamoVersion;
+            this.codeConverter = codeConverter;
 
             try
             {
@@ -62,7 +64,19 @@ namespace Dynamo.PythonMigration.MigrationAssistant
                 diffModel = sidebyside.BuildDiffModel(OldCode, OldCode, false);
 
                 SetSideBySideViewModel();
-                
+
+                CurrentViewModel.DiffState = State.Error;
+                return;
+            }
+            catch (TypeLoadException)
+            {
+                // Python.Runtime assembly at runtime is incompatible (e.g. pythonnet 2.x instead of 3.x):
+                // PyModule type does not exist in the older assembly. Show error state instead of crashing.
+                var sidebyside = new SideBySideDiffBuilder();
+                diffModel = sidebyside.BuildDiffModel(OldCode, OldCode, false);
+
+                SetSideBySideViewModel();
+
                 CurrentViewModel.DiffState = State.Error;
                 return;
             }
@@ -74,7 +88,8 @@ namespace Dynamo.PythonMigration.MigrationAssistant
 
         private void MigrateCode()
         {
-            NewCode = ScriptMigrator.MigrateCode(OldCode);
+            var converter = codeConverter ?? ScriptMigrator.MigrateCode;
+            NewCode = converter(OldCode);
 
             var sidebyside = new SideBySideDiffBuilder();
             diffModel = sidebyside.BuildDiffModel(OldCode, NewCode, false);
