@@ -34,11 +34,24 @@ namespace Dynamo.UI.Prompts
             this.dynamoViewModel = dynamoViewModel;
 
             var ownerWindow = dynamoViewModel.Owner;
-            if (ownerWindow != null && ownerWindow.IsLoaded)
+            if (ownerWindow != null && ownerWindow.IsVisible)
             {
                 Owner = ownerWindow;
+                this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             }
-            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            else
+            {
+                var mainWindow = Application.Current?.MainWindow;
+                if (mainWindow != null && mainWindow.IsVisible)
+                {
+                    Owner = mainWindow;
+                    this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                }
+                else
+                {
+                    this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                }
+            }
 
             // do not accept value if user closes 
             this.Closing += (sender, args) => this.DialogResult = false;
