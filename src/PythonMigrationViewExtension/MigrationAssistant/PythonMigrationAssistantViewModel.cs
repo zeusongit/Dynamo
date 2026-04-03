@@ -44,6 +44,18 @@ namespace Dynamo.PythonMigration.MigrationAssistant
             set { this.currentViewModel = value; RaisePropertyChanged(nameof(this.CurrentViewModel)); }
         }
 
+        /// <summary>
+        /// Initializes the view model, runs the 2-to-3 code migration, and prepares the diff model.
+        /// If migration fails the view model is placed in an error state rather than propagating the exception.
+        /// </summary>
+        /// <param name="pythonNode">The Python node whose script will be migrated.</param>
+        /// <param name="workspace">The workspace that contains the node.</param>
+        /// <param name="pathManager">Provides backup and application paths.</param>
+        /// <param name="dynamoVersion">The running Dynamo version, used to scope disclaimer-dismiss files.</param>
+        /// <param name="codeConverter">
+        /// Optional override for the migration function. Defaults to <see cref="ScriptMigrator.MigrateCode"/>.
+        /// Intended for unit testing only.
+        /// </param>
         public PythonMigrationAssistantViewModel(PythonNode pythonNode, WorkspaceModel workspace, IPathManager pathManager, Version dynamoVersion, Func<string, string> codeConverter = null)
         {
             PythonNode = pythonNode;
@@ -60,24 +72,19 @@ namespace Dynamo.PythonMigration.MigrationAssistant
             }
             catch (PythonException)
             {
-                var sidebyside = new SideBySideDiffBuilder();
-                diffModel = sidebyside.BuildDiffModel(OldCode, OldCode, false);
-
-                SetSideBySideViewModel();
-
-                CurrentViewModel.DiffState = State.Error;
+                // Python script error during migration (e.g. syntax the 2to3 tool cannot parse).
+                SetMigrationErrorState();
                 return;
             }
-            catch (TypeLoadException)
+            catch (Exception ex) when (
+                ex is TypeLoadException ||
+                ex is MissingMethodException ||
+                ex is FileLoadException ||
+                ex is BadImageFormatException)
             {
-                // Python.Runtime assembly at runtime is incompatible (e.g. pythonnet 2.x instead of 3.x):
-                // PyModule type does not exist in the older assembly. Show error state instead of crashing.
-                var sidebyside = new SideBySideDiffBuilder();
-                diffModel = sidebyside.BuildDiffModel(OldCode, OldCode, false);
-
-                SetSideBySideViewModel();
-
-                CurrentViewModel.DiffState = State.Error;
+                // Python.Runtime assembly at runtime is incompatible (e.g. pythonnet 2.x instead of 3.x).
+                // Types or members such as PyModule may be absent in older assemblies.
+                SetMigrationErrorState();
                 return;
             }
             SetSideBySideViewModel();
@@ -93,6 +100,14 @@ namespace Dynamo.PythonMigration.MigrationAssistant
 
             var sidebyside = new SideBySideDiffBuilder();
             diffModel = sidebyside.BuildDiffModel(OldCode, NewCode, false);
+        }
+
+        private void SetMigrationErrorState()
+        {
+            var sidebyside = new SideBySideDiffBuilder();
+            diffModel = sidebyside.BuildDiffModel(OldCode, OldCode, false);
+            SetSideBySideViewModel();
+            CurrentViewModel.DiffState = State.Error;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Dynamo;
 using Dynamo.Graph.Workspaces;
 using Dynamo.PythonMigration.Differ;
@@ -36,6 +37,56 @@ namespace DynamoPythonTests
             });
 
             // Assert
+            Assert.IsNotNull(viewModel);
+            Assert.AreEqual(State.Error, viewModel.CurrentViewModel.DiffState);
+        }
+
+        /// <summary>
+        /// Verifies that other assembly-mismatch exceptions (MissingMethodException, FileLoadException,
+        /// BadImageFormatException) from an incompatible Python.Runtime are also handled gracefully.
+        /// </summary>
+        [Test]
+        public void WhenMigrationThrowsMissingMethodExceptionViewModelShowsErrorState()
+        {
+            var pyNode = new PythonNode();
+            var workspace = CurrentDynamoModel.CurrentWorkspace as WorkspaceModel;
+            var pathManager = CurrentDynamoModel.PathManager;
+
+            Func<string, string> brokenMigrator = _ =>
+                throw new MissingMethodException("Python.Runtime.Py", "CreateScope");
+
+            PythonMigrationAssistantViewModel viewModel = null;
+            Assert.DoesNotThrow(() =>
+            {
+                viewModel = new PythonMigrationAssistantViewModel(
+                    pyNode, workspace, pathManager, new Version(3, 0), brokenMigrator);
+            });
+
+            Assert.IsNotNull(viewModel);
+            Assert.AreEqual(State.Error, viewModel.CurrentViewModel.DiffState);
+        }
+
+        /// <summary>
+        /// Verifies that a FileLoadException (e.g. assembly version conflict) during migration
+        /// is handled gracefully and shows an error state.
+        /// </summary>
+        [Test]
+        public void WhenMigrationThrowsFileLoadExceptionViewModelShowsErrorState()
+        {
+            var pyNode = new PythonNode();
+            var workspace = CurrentDynamoModel.CurrentWorkspace as WorkspaceModel;
+            var pathManager = CurrentDynamoModel.PathManager;
+
+            Func<string, string> brokenMigrator = _ =>
+                throw new FileLoadException("Could not load file or assembly 'Python.Runtime'");
+
+            PythonMigrationAssistantViewModel viewModel = null;
+            Assert.DoesNotThrow(() =>
+            {
+                viewModel = new PythonMigrationAssistantViewModel(
+                    pyNode, workspace, pathManager, new Version(3, 0), brokenMigrator);
+            });
+
             Assert.IsNotNull(viewModel);
             Assert.AreEqual(State.Error, viewModel.CurrentViewModel.DiffState);
         }
