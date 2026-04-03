@@ -53,8 +53,7 @@ namespace Dynamo.UI.Prompts
                 }
             }
 
-            // do not accept value if user closes 
-            this.Closing += (sender, args) => this.DialogResult = false;
+            this.Closing += EditWindow_Closing;
             if (false != updateSourceOnTextChange)
             {
                 this.editText.TextChanged += delegate
@@ -217,9 +216,19 @@ namespace Dynamo.UI.Prompts
             DragMove();
         }
 
+        // Do not accept value if user closes without confirming.
+        // DialogResult is only settable when opened via ShowDialog(); guard with try/catch
+        // since WPF provides no public API to distinguish dialog vs non-dialog mode.
+        private void EditWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try { this.DialogResult = false; }
+            catch (InvalidOperationException) { }
+        }
+
         private void EditWindow_Closed(object sender, EventArgs e)
         {
             this.editText.PreviewKeyDown -= EditText_PreviewKeyDown;
+            this.Closing -= EditWindow_Closing;
             this.Closed -= EditWindow_Closed;
         }
 
