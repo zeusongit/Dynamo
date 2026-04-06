@@ -42,8 +42,8 @@ namespace DynamoPythonTests
         }
 
         /// <summary>
-        /// Verifies that other assembly-mismatch exceptions (MissingMethodException, FileLoadException,
-        /// BadImageFormatException) from an incompatible Python.Runtime are also handled gracefully.
+        /// Verifies that a MissingMethodException (e.g. missing member in incompatible Python.Runtime)
+        /// during migration is handled gracefully and shows an error state.
         /// </summary>
         [Test]
         public void WhenMigrationThrowsMissingMethodExceptionViewModelShowsErrorState()
@@ -79,6 +79,31 @@ namespace DynamoPythonTests
 
             Func<string, string> brokenMigrator = _ =>
                 throw new FileLoadException("Could not load file or assembly 'Python.Runtime'");
+
+            PythonMigrationAssistantViewModel viewModel = null;
+            Assert.DoesNotThrow(() =>
+            {
+                viewModel = new PythonMigrationAssistantViewModel(
+                    pyNode, workspace, pathManager, new Version(3, 0), brokenMigrator);
+            });
+
+            Assert.IsNotNull(viewModel);
+            Assert.AreEqual(State.Error, viewModel.CurrentViewModel.DiffState);
+        }
+
+        /// <summary>
+        /// Verifies that a BadImageFormatException (e.g. 32/64-bit or .NET target mismatch in
+        /// Python.Runtime) during migration is handled gracefully and shows an error state.
+        /// </summary>
+        [Test]
+        public void WhenMigrationThrowsBadImageFormatExceptionViewModelShowsErrorState()
+        {
+            var pyNode = new PythonNode();
+            var workspace = CurrentDynamoModel.CurrentWorkspace as WorkspaceModel;
+            var pathManager = CurrentDynamoModel.PathManager;
+
+            Func<string, string> brokenMigrator = _ =>
+                throw new BadImageFormatException("The format of the file 'Python.Runtime' is invalid.");
 
             PythonMigrationAssistantViewModel viewModel = null;
             Assert.DoesNotThrow(() =>
