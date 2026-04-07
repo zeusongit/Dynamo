@@ -47,10 +47,6 @@ namespace Dynamo.UI.Prompts
                     Owner = mainWindow;
                     this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 }
-                else
-                {
-                    this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-                }
             }
 
             this.Closing += EditWindow_Closing;
